@@ -1,0 +1,70 @@
+name: R1 CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  merge_group:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: r1-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: R1 verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      CI: 'true'
+      SOURCE_SHA: ${{ github.sha }}
+    steps:
+      - name: Checkout exact revision
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Set up pinned Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Verify R1 behavior
+        run: npm test
+      - name: Build
+        run: npm run build
+      - name: Package tested build
+        run: |
+          docker build --build-arg SOURCE_SHA="$SOURCE_SHA" --tag "foxy-back:$SOURCE_SHA" .
+      - name: Smoke test container
+        run: |
+          trap 'docker logs foxy-smoke; docker rm -f foxy-smoke' EXIT
+          docker run --detach --name foxy-smoke --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges:true --publish 127.0.0.1:18080:3001 "foxy-back:$SOURCE_SHA"
+          curl --fail --silent --show-error --retry 10 --retry-delay 1 --retry-all-errors --retry-max-time 30 --max-time 3 --connect-timeout 3 http://127.0.0.1:18080/api/v1/health
+      - name: Archive immutable build
+        run: |
+          mkdir artifact
+          docker save "foxy-back:$SOURCE_SHA" | gzip -n > artifact/image.tar.gz
+          docker image inspect --format '{{.Id}}' "foxy-back:$SOURCE_SHA" > artifact/image-id.txt
+          printf '%s\n' "$SOURCE_SHA" > artifact/source-sha.txt
+          tar -czf artifact/dist.tar.gz dist contracts
+          (cd artifact && sha256sum image.tar.gz dist.tar.gz image-id.txt source-sha.txt > SHA256SUMS)
+      - name: Upload review artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: foxy-back-${{ github.sha }}-${{ github.run_attempt }}
+          path: artifact/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
