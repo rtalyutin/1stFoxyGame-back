@@ -10,6 +10,10 @@ on:
 permissions:
   contents: read
 
+defaults:
+  run:
+    shell: bash
+
 concurrency:
   group: r1-ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -47,7 +51,7 @@ jobs:
         run: |
           trap 'docker logs foxy-smoke; docker rm -f foxy-smoke' EXIT
           docker run --detach --name foxy-smoke --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges:true --publish 127.0.0.1:18080:3001 "foxy-back:$SOURCE_SHA"
-          curl --fail --silent --show-error --retry 10 --retry-delay 1 --retry-connrefused http://127.0.0.1:18080/api/v1/health
+          curl --fail --silent --show-error --retry 10 --retry-delay 1 --retry-all-errors --retry-max-time 20 http://127.0.0.1:18080/api/v1/health
       - name: Archive immutable build
         run: |
           mkdir artifact
