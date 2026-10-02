@@ -1,0 +1,187 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "1stFoxyGame API",
+    "version": "1.0.0-r1",
+    "description": "R1 implements health only. Components and x-planned-paths describe R3 integration boundaries, not available routes. No registration endpoint exists."
+  },
+  "servers": [{ "url": "/" }],
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "operationId": "getHealth",
+        "x-release": "R1",
+        "summary": "Fresh API reachability check, without authentication or persistence",
+        "responses": {
+          "200": {
+            "description": "API process is reachable; not a database readiness check",
+            "headers": { "Cache-Control": { "schema": { "type": "string", "enum": ["no-store"] } } },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HealthResponse" } } }
+          }
+        }
+      }
+    },
+    "/healthz": {
+      "get": {
+        "operationId": "getLiveness",
+        "x-release": "R1",
+        "summary": "Health alias for infrastructure checks",
+        "responses": {
+          "200": {
+            "description": "API process is reachable",
+            "headers": { "Cache-Control": { "schema": { "type": "string", "enum": ["no-store"] } } },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HealthResponse" } } }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "sessionCookie": { "type": "apiKey", "in": "cookie", "name": "__Host-foxy-session", "description": "R3 only. Opaque server session; Secure, HttpOnly, SameSite=Lax, Path=/ and no Domain. CSRF protection is required on mutations." }
+    },
+    "schemas": {
+      "HealthResponse": {
+        "type": "object", "additionalProperties": false,
+        "required": ["status", "apiVersion", "serverTime"],
+        "properties": {
+          "status": { "type": "string", "enum": ["ok"] },
+          "apiVersion": { "type": "string", "enum": ["1"] },
+          "serverTime": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ApiError": {
+        "type": "object", "additionalProperties": false, "required": ["error"],
+        "properties": {
+          "error": {
+            "type": "object", "additionalProperties": false, "required": ["code", "message"],
+            "properties": {
+              "code": { "type": "string", "enum": ["NOT_FOUND", "INVALID_REQUEST", "INTERNAL_ERROR", "UNAUTHENTICATED", "FORBIDDEN", "REVISION_CONFLICT", "OPERATION_CONFLICT", "INSUFFICIENT_RESOURCES", "RATE_LIMITED"] },
+              "message": { "type": "string", "maxLength": 512 },
+              "currentRevision": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 }
+            }
+          }
+        }
+      },
+      "MutationIdentity": {
+        "x-release": "R3", "x-implemented": false,
+        "type": "object", "additionalProperties": false,
+        "required": ["operationId", "expectedRevision"],
+        "properties": {
+          "operationId": { "type": "string", "format": "uuid", "description": "Client-generated once per intent. Retry the identical payload with the same ID." },
+          "expectedRevision": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 }
+        }
+      },
+      "LoginRequest": {
+        "x-release": "R3", "x-implemented": false,
+        "type": "object", "additionalProperties": false, "required": ["login", "password"],
+        "properties": {
+          "login": { "type": "string", "minLength": 1, "maxLength": 128 },
+          "password": { "type": "string", "minLength": 1, "maxLength": 1024, "format": "password", "writeOnly": true }
+        }
+      },
+      "Session": {
+        "x-release": "R3", "x-implemented": false,
+        "type": "object", "additionalProperties": false, "required": ["accountId", "expiresAt", "csrfToken"],
+        "properties": {
+          "accountId": { "type": "string", "format": "uuid" },
+          "expiresAt": { "type": "string", "format": "date-time", "description": "Effective server deadline: min(lastActivityAt + idleTTL, issuedAt + absoluteTTL). R1 design defaults for R3 implementation: idle 24 hours, absolute 7 days; configurable, captured at session issuance. Sliding activity never extends beyond absolute expiry. Health and background session checks do not renew idle expiry." },
+          "csrfToken": { "type": "string", "minLength": 32, "maxLength": 256 }
+        }
+      },
+      "Profile": {
+        "x-release": "R3", "x-implemented": false,
+        "type": "object", "additionalProperties": false,
+        "required": ["accountId", "revision", "gold", "components", "equipment", "consumables"],
+        "properties": {
+          "accountId": { "type": "string", "format": "uuid" },
+          "revision": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+          "gold": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+          "components": { "type": "array", "maxItems": 2048, "items": { "$ref": "#/components/schemas/InventoryEntry" } },
+          "equipment": { "type": "array", "maxItems": 2048, "items": { "$ref": "#/components/schemas/InventoryEntry" } },
+          "consumables": { "type": "array", "maxItems": 2048, "items": { "$ref": "#/components/schemas/InventoryEntry" } }
+        }
+      },
+      "InventoryEntry": {
+        "x-release": "R3", "x-implemented": false,
+        "type": "object", "additionalProperties": false, "required": ["itemId", "quantity"],
+        "properties": {
+          "itemId": { "type": "string", "minLength": 1, "maxLength": 128 },
+          "quantity": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 }
+        }
+      },
+      "Catalog": {
+        "x-release": "R3", "x-implemented": false,
+        "type": "object", "additionalProperties": false, "required": ["version", "items"],
+        "properties": {
+          "version": { "type": "string", "minLength": 1, "maxLength": 64 },
+          "items": {
+            "type": "array", "maxItems": 2048,
+            "items": {
+              "type": "object", "additionalProperties": false, "required": ["id", "kind"],
+              "properties": {
+                "id": { "type": "string", "minLength": 1, "maxLength": 128 },
+                "kind": { "type": "string", "enum": ["component", "equipment", "consumable"] }
+              }
+            }
+          }
+        }
+      },
+      "RunStartRequest": {
+        "x-release": "R3", "x-implemented": false,
+        "type": "object", "additionalProperties": false,
+        "required": ["operationId", "expectedRevision", "heroId", "abilityId", "rulesVersion"],
+        "properties": {
+          "operationId": { "type": "string", "format": "uuid" },
+          "expectedRevision": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+          "heroId": { "type": "string", "minLength": 1, "maxLength": 128 },
+          "abilityId": { "type": "string", "minLength": 1, "maxLength": 128 },
+          "rulesVersion": { "type": "string", "minLength": 1, "maxLength": 64 }
+        }
+      },
+      "RunTicket": {
+        "x-release": "R3", "x-implemented": false,
+        "type": "object", "additionalProperties": false,
+        "required": ["runId", "seed", "rulesVersion", "startedAt", "revision"],
+        "properties": {
+          "runId": { "type": "string", "format": "uuid" },
+          "seed": { "type": "integer", "minimum": 0, "maximum": 4294967295 },
+          "rulesVersion": { "type": "string", "minLength": 1, "maxLength": 64 },
+          "startedAt": { "type": "string", "format": "date-time" },
+          "revision": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 }
+        }
+      },
+      "RunFinishRequest": {
+        "x-release": "R3", "x-implemented": false,
+        "type": "object", "additionalProperties": false,
+        "required": ["runId", "operationId", "expectedRevision", "ticks", "distanceMeters", "kills", "reason"],
+        "description": "Untrusted summary. It cannot directly grant currency. R3 reward protocol must include replayable commands/checkpoints before enabling economic settlement.",
+        "properties": {
+          "runId": { "type": "string", "format": "uuid" },
+          "operationId": { "type": "string", "format": "uuid" },
+          "expectedRevision": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+          "ticks": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+          "distanceMeters": { "type": "number", "minimum": 0, "maximum": 9007199254740991 },
+          "kills": {
+            "type": "object", "additionalProperties": false, "required": ["normal", "strong", "boss"],
+            "properties": {
+              "normal": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+              "strong": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+              "boss": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 }
+            }
+          },
+          "reason": { "type": "string", "enum": ["contact", "breach", "projectile", "abandoned"] }
+        }
+      }
+    }
+  },
+  "x-planned-paths": {
+    "/api/v1/auth/login": { "method": "POST", "release": "R3", "implemented": false, "requestSchema": "LoginRequest", "responseSchema": "Session", "successStatus": 200 },
+    "/api/v1/auth/session": { "method": "GET", "release": "R3", "implemented": false, "responseSchema": "Session", "successStatus": 200, "requiresSession": true },
+    "/api/v1/auth/logout": { "method": "POST", "release": "R3", "implemented": false, "successStatus": 204, "requiresSession": true, "requiresCsrf": true },
+    "/api/v1/profile": { "method": "GET", "release": "R3", "implemented": false, "responseSchema": "Profile", "successStatus": 200, "requiresSession": true },
+    "/api/v1/catalog": { "method": "GET", "release": "R3", "implemented": false, "responseSchema": "Catalog", "successStatus": 200, "requiresSession": true },
+    "/api/v1/runs": { "method": "POST", "release": "R3", "implemented": false, "requestSchema": "RunStartRequest", "responseSchema": "RunTicket", "successStatus": 201, "requiresSession": true, "requiresCsrf": true },
+    "/api/v1/runs/finish": { "method": "POST", "release": "R3", "implemented": false, "requestSchema": "RunFinishRequest", "responseSchema": "Profile", "successStatus": 200, "requiresSession": true, "requiresCsrf": true }
+  }
+}
