@@ -62,7 +62,7 @@ jobs:
         env:
           DATABASE_URL: postgresql://foxy_ci:ci_ephemeral_only@127.0.0.1:${{ job.services.postgres.ports[5432] }}/foxy_ci
           PG_TEST_CONTAINER: ${{ job.services.postgres.id }}
-        run: npm run test:db
+        run: timeout --signal=TERM --kill-after=5s 150s npm run test:db
       - name: Build
         run: npm run build
       - name: Package tested build
