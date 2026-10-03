@@ -68,7 +68,7 @@ test('R3/R4 typed profile, idempotent provisioning, transactional journals and r
   const profileId=(await admin.query("SELECT v.entity_id FROM entity_parameter_values v JOIN entity_parameters p ON p.id=v.parameter_id JOIN entity_types t ON t.id=v.entity_type_id WHERE t.code='profile' AND p.code='owner' AND v.value_reference=$1",[accountId])).rows[0].entity_id;
   await atomic(admin,()=>new EntityStore(admin).set(profileId,'gold-milli',{type:'decimal',value:'4000.000'}));assert.equal((await repo.getProfile(accountId)).goldMilli,'4000');
   for(const value of ['-1','0.5'])await assert.rejects(atomic(admin,()=>new EntityStore(admin).set(profileId,'gold-milli',{type:'decimal',value})),e=>e.code==='23514');
-  await assert.rejects(atomic(admin,()=>admin.query("DELETE FROM entity_parameter_values WHERE entity_id=$1 AND parameter_id=(SELECT id FROM entity_parameters p JOIN entity_types t ON t.id=p.entity_type_id WHERE t.code='profile' AND p.code='gold-milli')",[profileId])),e=>e.code==='23514');
+  await assert.rejects(atomic(admin,()=>admin.query("DELETE FROM entity_parameter_values WHERE entity_id=$1 AND parameter_id=(SELECT p.id FROM entity_parameters p JOIN entity_types t ON t.id=p.entity_type_id WHERE t.code='profile' AND p.code='gold-milli')",[profileId])),e=>e.code==='23514');
   const itemId=(await repo.getProfile(accountId)).items[0].id;
   for(const invalid of ['-1','0.5','9223372036854775808'])await assert.rejects(atomic(admin,()=>admin.query('UPDATE profile_runs SET loot_gold_milli=$2 WHERE account_id=$1',[accountId,invalid])),e=>e.code==='23514');
   await assert.rejects(atomic(admin,()=>admin.query('UPDATE profile_runs SET loot_steel=-1 WHERE account_id=$1',[accountId])),e=>e.code==='23514');
