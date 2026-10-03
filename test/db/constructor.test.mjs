@@ -116,9 +116,14 @@ test('PostgreSQL 18 constructor and versioned migrations',async t=>{
     await c.query('INSERT INTO entities(id,entity_type_id) VALUES($1,$2)',[target,f.otherType]);
     const write=(id,type=f.otherType)=>c.query("INSERT INTO entity_parameter_values(entity_id,parameter_id,entity_type_id,data_type,is_multiple,is_unique,value_reference,reference_type_id) VALUES($1,$2,$3,'reference',false,false,$4,$5)",[f.entity,p,f.type,id,type]);
     await reject(c,()=>write(randomUUID()));await reject(c,()=>write(f.entity,f.type));await write(target);
-    await reject(c,()=>c.query('DELETE FROM entities WHERE id=$1',[target]));
-    await reject(c,()=>c.query('DELETE FROM entity_parameters WHERE id=$1',[p]));
-    await reject(c,()=>c.query('DELETE FROM entity_types WHERE id=$1',[f.type]));
+    // PG18 ON DELETE RESTRICT raises restrict_violation (23001), distinct from
+    // the foreign_key_violation (23503) of an invalid inserted reference.
+    await reject(c,()=>c.query('DELETE FROM entities WHERE id=$1',[target]),['23001']);
+    await reject(c,()=>c.query('DELETE FROM entity_parameters WHERE id=$1',[p]),['23001']);
+    await reject(c,()=>c.query('DELETE FROM entity_types WHERE id=$1',[f.type]),['23001']);
+    assert.equal((await c.query('SELECT count(*)::int AS n FROM entities WHERE id=$1',[target])).rows[0].n,1);
+    assert.equal((await c.query('SELECT count(*)::int AS n FROM entity_parameters WHERE id=$1',[p])).rows[0].n,1);
+    assert.equal((await c.query('SELECT count(*)::int AS n FROM entity_types WHERE id=$1',[f.type])).rows[0].n,1);
   });
   await t.test('active completeness is deferred and enforced on deletion and metadata changes',async()=>{
     const f=await fixture(c);await c.query('UPDATE entity_parameters SET is_required=true WHERE id=$1',[f.parameter]);
