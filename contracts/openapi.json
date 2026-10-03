@@ -2,8 +2,8 @@
   "openapi": "3.0.3",
   "info": {
     "title": "1stFoxyGame API",
-    "version": "1.0.0-r2",
-    "description": "R2 implements health and a validated versioned content catalog. R2 run-event validation is an internal owner-scoped service, without a public session or reward endpoint. x-planned-paths remain R3; no registration endpoint exists."
+    "version": "1.0.0-r34",
+    "description": "R3/R4 persistent PostgreSQL profile, controlled provisioned accounts, server-replayed combat, atomic fixed-point economy and equipment. No signup. Same-origin JSON mutations require CSRF. Snapshot incompatible handling never resets property."
   },
   "servers": [
     {
@@ -97,6 +97,1238 @@
           }
         }
       }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "operationId": "login",
+        "x-release": "R3/R4",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Session"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Bounded request/processing error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Bounded request/processing error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Bounded request/processing error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "operationId": "logout",
+        "x-release": "R3/R4",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LogoutResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Bounded request/processing error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Bounded request/processing error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Bounded request/processing error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LogoutRequest"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-CSRF-Token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/session": {
+      "get": {
+        "operationId": "getSession",
+        "x-release": "R3/R4",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Session"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Bounded request/processing error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Bounded request/processing error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Bounded request/processing error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/profile": {
+      "get": {
+        "operationId": "getProfile",
+        "x-release": "R3/R4",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Profile"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Bounded request/processing error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Bounded request/processing error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Bounded request/processing error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ]
+      }
+    },
+    "/api/v1/economy/catalog": {
+      "get": {
+        "operationId": "getEquipmentCatalog",
+        "x-release": "R3/R4",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EquipmentCatalog"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Bounded request/processing error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Bounded request/processing error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Bounded request/processing error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/run": {
+      "get": {
+        "operationId": "getRun",
+        "x-release": "R3/R4",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "snapshot": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/components/schemas/SimulationSnapshot"
+                        },
+                        {
+                          "type": "object",
+                          "description": "Unsupported stored snapshot; client must use trusted runId to close only the run and retain permanent property."
+                        }
+                      ]
+                    },
+                    "control": {
+                      "type": "string",
+                      "enum": [
+                        "owner",
+                        "readOnly"
+                      ]
+                    },
+                    "ownerEpoch": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "runId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "loot": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "goldMilli",
+                        "components"
+                      ],
+                      "properties": {
+                        "goldMilli": {
+                          "type": "string",
+                          "pattern": "^(0|[1-9][0-9]{0,18})$",
+                          "description": "Nonnegative integer milli-gold, max 9223372036854775807; 1000 = 1 gold."
+                        },
+                        "components": {
+                          "$ref": "#/components/schemas/Components"
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "snapshot",
+                    "control",
+                    "ownerEpoch",
+                    "updatedAt",
+                    "runId",
+                    "loot"
+                  ],
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Bounded request/processing error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Bounded request/processing error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Bounded request/processing error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "clientId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/operations": {
+      "post": {
+        "operationId": "performOperation",
+        "x-release": "R3/R4",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Bounded request/processing error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Bounded request/processing error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Bounded request/processing error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Operation"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-CSRF-Token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/operations/{operationId}": {
+      "get": {
+        "operationId": "getOperation",
+        "x-release": "R3/R4",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Bounded request/processing error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Bounded request/processing error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Bounded request/processing error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "operationId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/readyz": {
+      "get": {
+        "operationId": "readiness",
+        "responses": {
+          "200": {
+            "description": "Database and R3/R4 metadata ready",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "status",
+                    "apiVersion"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "ready"
+                      ]
+                    },
+                    "apiVersion": {
+                      "type": "string",
+                      "enum": [
+                        "1"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Persistent storage unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -105,7 +1337,7 @@
         "type": "apiKey",
         "in": "cookie",
         "name": "__Host-foxy-session",
-        "description": "R3 only. Opaque server session; Secure, HttpOnly, SameSite=Lax, Path=/ and no Domain. CSRF protection is required on mutations."
+        "description": "Opaque revocable 30-day server session. Secure, HttpOnly, SameSite=Strict, Path=/, no Domain. Production __Host-foxy-session; development foxy-session. X-CSRF-Token required on authenticated mutations."
       }
     },
     "schemas": {
@@ -154,15 +1386,37 @@
               "code": {
                 "type": "string",
                 "enum": [
-                  "NOT_FOUND",
-                  "INVALID_REQUEST",
-                  "INTERNAL_ERROR",
-                  "UNAUTHENTICATED",
+                  "ADVANCE_TOO_FAST",
+                  "AUTH_REQUIRED",
+                  "CONSUMABLE_UNAVAILABLE",
+                  "CSRF_FAILED",
                   "FORBIDDEN",
-                  "REVISION_CONFLICT",
-                  "OPERATION_CONFLICT",
+                  "INCOMPATIBLE_ITEM",
                   "INSUFFICIENT_RESOURCES",
-                  "RATE_LIMITED"
+                  "INTERNAL_ERROR",
+                  "INVALID_COMMAND",
+                  "INVALID_CREDENTIALS",
+                  "INVALID_FRAMES",
+                  "INVALID_OPERATION",
+                  "INVALID_PHASE",
+                  "INVALID_REQUEST",
+                  "ITEM_NOT_FOUND",
+                  "NOT_FOUND",
+                  "OPERATION_CONFLICT",
+                  "OPERATION_NOT_FOUND",
+                  "PROFILE_OVERFLOW",
+                  "PROFILE_STORAGE_UNAVAILABLE",
+                  "RATE_LIMITED",
+                  "REVISION_CONFLICT",
+                  "RUN_BUSY",
+                  "RUN_INCOMPATIBLE",
+                  "RUN_NOT_FOUND",
+                  "RUN_NOT_OWNER",
+                  "RUN_OVERFLOW",
+                  "SERVICE_UNAVAILABLE",
+                  "SHOP_REQUIRED",
+                  "UNAUTHENTICATED",
+                  "UNKNOWN_RECIPE"
                 ]
               },
               "message": {
@@ -201,69 +1455,63 @@
         }
       },
       "LoginRequest": {
-        "x-release": "R3",
-        "x-implemented": false,
         "type": "object",
         "additionalProperties": false,
-        "required": [
-          "login",
-          "password"
-        ],
         "properties": {
           "login": {
             "type": "string",
-            "minLength": 1,
-            "maxLength": 128
+            "pattern": "^[a-z0-9][a-z0-9._-]{2,63}$"
           },
           "password": {
             "type": "string",
-            "minLength": 1,
-            "maxLength": 1024,
-            "format": "password",
+            "minLength": 12,
+            "maxLength": 256,
             "writeOnly": true
           }
-        }
+        },
+        "required": [
+          "login",
+          "password"
+        ]
       },
       "Session": {
-        "x-release": "R3",
-        "x-implemented": false,
         "type": "object",
         "additionalProperties": false,
-        "required": [
-          "accountId",
-          "expiresAt",
-          "csrfToken"
-        ],
         "properties": {
-          "accountId": {
-            "type": "string",
-            "format": "uuid"
+          "account": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "login": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "login"
+            ]
+          },
+          "csrfToken": {
+            "type": "string"
           },
           "expiresAt": {
             "type": "string",
-            "format": "date-time",
-            "description": "Effective server deadline: min(lastActivityAt + idleTTL, issuedAt + absoluteTTL). R1 design defaults for R3 implementation: idle 24 hours, absolute 7 days; configurable, captured at session issuance. Sliding activity never extends beyond absolute expiry. Health and background session checks do not renew idle expiry."
-          },
-          "csrfToken": {
-            "type": "string",
-            "minLength": 32,
-            "maxLength": 256
+            "format": "date-time"
           }
-        }
+        },
+        "required": [
+          "account",
+          "csrfToken",
+          "expiresAt"
+        ]
       },
       "Profile": {
-        "x-release": "R3",
-        "x-implemented": false,
         "type": "object",
         "additionalProperties": false,
-        "required": [
-          "accountId",
-          "revision",
-          "gold",
-          "components",
-          "equipment",
-          "consumables"
-        ],
         "properties": {
           "accountId": {
             "type": "string",
@@ -274,33 +1522,88 @@
             "minimum": 0,
             "maximum": 9007199254740991
           },
-          "gold": {
-            "type": "integer",
-            "minimum": 0,
-            "maximum": 9007199254740991
+          "goldMilli": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,18})$",
+            "description": "Nonnegative integer milli-gold, max 9223372036854775807; 1000 = 1 gold."
           },
           "components": {
+            "$ref": "#/components/schemas/Components"
+          },
+          "items": {
             "type": "array",
-            "maxItems": 2048,
             "items": {
-              "$ref": "#/components/schemas/InventoryEntry"
+              "$ref": "#/components/schemas/ItemInstance"
             }
           },
-          "equipment": {
-            "type": "array",
-            "maxItems": 2048,
-            "items": {
-              "$ref": "#/components/schemas/InventoryEntry"
-            }
+          "loadouts": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "pudge": {
+                "$ref": "#/components/schemas/HeroLoadout"
+              }
+            },
+            "required": [
+              "pudge"
+            ]
           },
           "consumables": {
-            "type": "array",
-            "maxItems": 2048,
-            "items": {
-              "$ref": "#/components/schemas/InventoryEntry"
-            }
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "slow_dust": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 2147483647
+              },
+              "collector_vial": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 2147483647
+              }
+            },
+            "required": [
+              "slow_dust",
+              "collector_vial"
+            ]
+          },
+          "stats": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "runs": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 2147483647
+              },
+              "totalKills": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 2147483647
+              },
+              "bestDistance": {
+                "type": "number",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "runs",
+              "totalKills",
+              "bestDistance"
+            ]
           }
-        }
+        },
+        "required": [
+          "accountId",
+          "revision",
+          "goldMilli",
+          "components",
+          "items",
+          "loadouts",
+          "consumables",
+          "stats"
+        ]
       },
       "InventoryEntry": {
         "x-release": "R3",
@@ -956,63 +2259,1729 @@
             }
           }
         }
+      },
+      "Components": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "steel": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "ember": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "core": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          }
+        },
+        "required": [
+          "steel",
+          "ember",
+          "core"
+        ]
+      },
+      "Recipe": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "goldMilli": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,18})$",
+            "description": "Nonnegative integer milli-gold, max 9223372036854775807; 1000 = 1 gold."
+          },
+          "components": {
+            "$ref": "#/components/schemas/Components"
+          }
+        },
+        "required": [
+          "goldMilli",
+          "components"
+        ]
+      },
+      "ItemInstance": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "definitionId": {
+            "type": "string"
+          },
+          "level": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          }
+        },
+        "required": [
+          "id",
+          "definitionId",
+          "level"
+        ]
+      },
+      "HeroLoadout": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "weapon": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "body": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "legs": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "talisman": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "quick": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "type": "string",
+              "nullable": true,
+              "enum": [
+                "slow_dust",
+                "collector_vial",
+                null
+              ]
+            }
+          }
+        },
+        "required": [
+          "weapon",
+          "body",
+          "legs",
+          "talisman",
+          "quick"
+        ]
+      },
+      "EquipmentModifiers": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "rangeMultiplier": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 10000
+          },
+          "outboundSpeedMultiplier": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 10000
+          },
+          "returnSpeedMultiplier": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 10000
+          },
+          "cooldown": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 10000
+          },
+          "lateralSpeedMultiplier": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 10000
+          },
+          "pierceTargets": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 10000
+          },
+          "returnHitTargets": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 10000
+          },
+          "goldMultiplierMilli": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 10000
+          }
+        },
+        "required": [
+          "rangeMultiplier",
+          "outboundSpeedMultiplier",
+          "returnSpeedMultiplier",
+          "cooldown",
+          "lateralSpeedMultiplier",
+          "pierceTargets",
+          "returnHitTargets",
+          "goldMultiplierMilli"
+        ]
+      },
+      "ItemLevel": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "level": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "recipe": {
+            "$ref": "#/components/schemas/Recipe"
+          },
+          "modifiers": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "rangeMultiplier": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 10000
+              },
+              "outboundSpeedMultiplier": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 10000
+              },
+              "returnSpeedMultiplier": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 10000
+              },
+              "cooldown": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 10000
+              },
+              "lateralSpeedMultiplier": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 10000
+              },
+              "pierceTargets": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 10000
+              },
+              "returnHitTargets": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 10000
+              },
+              "goldMultiplierMilli": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 10000
+              }
+            }
+          }
+        },
+        "required": [
+          "level",
+          "recipe",
+          "modifiers"
+        ]
+      },
+      "ItemDefinition": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slot": {
+            "type": "string",
+            "enum": [
+              "weapon",
+              "body",
+              "legs",
+              "talisman"
+            ]
+          },
+          "hero": {
+            "type": "string",
+            "enum": [
+              "pudge",
+              "all"
+            ]
+          },
+          "levels": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 3,
+            "items": {
+              "$ref": "#/components/schemas/ItemLevel"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slot",
+          "hero",
+          "levels"
+        ]
+      },
+      "ConsumableDefinition": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "enum": [
+              "slow_dust",
+              "collector_vial"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "recipe": {
+            "$ref": "#/components/schemas/Recipe"
+          },
+          "effect": {
+            "oneOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "slow"
+                    ]
+                  },
+                  "durationSeconds": {
+                    "type": "number"
+                  },
+                  "speedMultiplier": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "type",
+                  "durationSeconds",
+                  "speedMultiplier"
+                ]
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "collector"
+                    ]
+                  },
+                  "kills": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 2147483647
+                  },
+                  "goldMultiplierMilli": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 2147483647
+                  }
+                },
+                "required": [
+                  "type",
+                  "kills",
+                  "goldMultiplierMilli"
+                ]
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "recipe",
+          "effect"
+        ]
+      },
+      "EquipmentCatalog": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "version": {
+            "type": "string",
+            "enum": [
+              "r34.1"
+            ]
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ItemDefinition"
+            }
+          },
+          "consumables": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConsumableDefinition"
+            }
+          }
+        },
+        "required": [
+          "version",
+          "items",
+          "consumables"
+        ]
+      },
+      "Point": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "x": {
+            "type": "number"
+          },
+          "z": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "x",
+          "z"
+        ]
+      },
+      "Command": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "move"
+                ]
+              },
+              "axis": {
+                "type": "number",
+                "minimum": -1,
+                "maximum": 1
+              }
+            },
+            "required": [
+              "type",
+              "axis"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "cast"
+                ]
+              },
+              "aim": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "x": {
+                    "type": "number",
+                    "minimum": -1000,
+                    "maximum": 1000
+                  },
+                  "z": {
+                    "type": "number",
+                    "minimum": -1000,
+                    "maximum": 1000
+                  }
+                },
+                "required": [
+                  "x",
+                  "z"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "aim"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "enterShop"
+                ]
+              },
+              "shopId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+              },
+              "offset": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 0.016666666666666666
+              }
+            },
+            "required": [
+              "type",
+              "shopId"
+            ]
+          }
+        ]
+      },
+      "RunState": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "runId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "seed": {
+            "type": "integer"
+          },
+          "phase": {
+            "type": "string",
+            "enum": [
+              "running",
+              "paused",
+              "shop",
+              "gameOver"
+            ]
+          },
+          "tick": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "time": {
+            "type": "number",
+            "minimum": 0
+          },
+          "distance": {
+            "type": "number",
+            "minimum": 0
+          },
+          "hero": {
+            "$ref": "#/components/schemas/Point"
+          },
+          "enemies": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "projectiles": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "shopCandidates": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "usedShopIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "activeShopId": {
+            "type": "string",
+            "nullable": true
+          },
+          "effects": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "slowRemaining": {
+                "type": "number",
+                "minimum": 0
+              },
+              "slowedEnemyIds": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "slowedProjectileIds": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "collectorKillsRemaining": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 2147483647
+              }
+            },
+            "required": [
+              "slowRemaining",
+              "slowedEnemyIds",
+              "slowedProjectileIds",
+              "collectorKillsRemaining"
+            ]
+          },
+          "hook": {
+            "type": "object",
+            "nullable": true
+          },
+          "cooldownRemaining": {
+            "type": "number",
+            "minimum": 0
+          },
+          "kills": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "normal": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 2147483647
+              },
+              "strong": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 2147483647
+              },
+              "boss": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 2147483647
+              }
+            },
+            "required": [
+              "normal",
+              "strong",
+              "boss"
+            ]
+          },
+          "deathReason": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "contact",
+              "breach",
+              "projectile",
+              null
+            ]
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        },
+        "required": [
+          "runId",
+          "seed",
+          "phase",
+          "tick",
+          "time",
+          "distance",
+          "hero",
+          "enemies",
+          "projectiles",
+          "shopCandidates",
+          "usedShopIds",
+          "activeShopId",
+          "effects",
+          "hook",
+          "cooldownRemaining",
+          "kills",
+          "deathReason",
+          "events"
+        ]
+      },
+      "SimulationSnapshot": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "version": {
+            "type": "string",
+            "enum": [
+              "r34.1"
+            ]
+          },
+          "state": {
+            "$ref": "#/components/schemas/RunState"
+          },
+          "config": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "heroSpeed",
+              "lateralSpeed",
+              "heroRadius",
+              "lateralLimit",
+              "enemySpeed",
+              "enemyRadius",
+              "breachOffset",
+              "spawnDistance",
+              "spawnMinSeconds",
+              "spawnMaxSeconds",
+              "maxEnemies",
+              "spawning",
+              "hookRange",
+              "hookOutboundSpeed",
+              "hookReturnSpeed",
+              "hookCooldown",
+              "hookRadius",
+              "strongRadius",
+              "bossRadius",
+              "bossEnemySpeed",
+              "bossRequiredHits",
+              "projectileRadius",
+              "projectileSpeed",
+              "projectileLifetime",
+              "shooterTelegraph",
+              "shooterInterval",
+              "bossTelegraph",
+              "bossInterval",
+              "bossVolleyDegrees",
+              "maxShooters",
+              "maxBosses",
+              "maxProjectiles",
+              "shooterUnlockSeconds",
+              "bossFirstSeconds",
+              "bossMinKills",
+              "bossMinInterval",
+              "bossMaxInterval",
+              "shopMinInterval",
+              "shopMaxInterval",
+              "spawnSafetySeconds",
+              "spawnRetrySeconds"
+            ],
+            "properties": {
+              "heroSpeed": {
+                "type": "number"
+              },
+              "lateralSpeed": {
+                "type": "number"
+              },
+              "heroRadius": {
+                "type": "number"
+              },
+              "lateralLimit": {
+                "type": "number"
+              },
+              "enemySpeed": {
+                "type": "number"
+              },
+              "enemyRadius": {
+                "type": "number"
+              },
+              "breachOffset": {
+                "type": "number"
+              },
+              "spawnDistance": {
+                "type": "number"
+              },
+              "spawnMinSeconds": {
+                "type": "number"
+              },
+              "spawnMaxSeconds": {
+                "type": "number"
+              },
+              "maxEnemies": {
+                "type": "number"
+              },
+              "spawning": {
+                "type": "boolean"
+              },
+              "hookRange": {
+                "type": "number"
+              },
+              "hookOutboundSpeed": {
+                "type": "number"
+              },
+              "hookReturnSpeed": {
+                "type": "number"
+              },
+              "hookCooldown": {
+                "type": "number"
+              },
+              "hookRadius": {
+                "type": "number"
+              },
+              "strongRadius": {
+                "type": "number"
+              },
+              "bossRadius": {
+                "type": "number"
+              },
+              "bossEnemySpeed": {
+                "type": "number"
+              },
+              "bossRequiredHits": {
+                "type": "number"
+              },
+              "projectileRadius": {
+                "type": "number"
+              },
+              "projectileSpeed": {
+                "type": "number"
+              },
+              "projectileLifetime": {
+                "type": "number"
+              },
+              "shooterTelegraph": {
+                "type": "number"
+              },
+              "shooterInterval": {
+                "type": "number"
+              },
+              "bossTelegraph": {
+                "type": "number"
+              },
+              "bossInterval": {
+                "type": "number"
+              },
+              "bossVolleyDegrees": {
+                "type": "number"
+              },
+              "maxShooters": {
+                "type": "number"
+              },
+              "maxBosses": {
+                "type": "number"
+              },
+              "maxProjectiles": {
+                "type": "number"
+              },
+              "shooterUnlockSeconds": {
+                "type": "number"
+              },
+              "bossFirstSeconds": {
+                "type": "number"
+              },
+              "bossMinKills": {
+                "type": "number"
+              },
+              "bossMinInterval": {
+                "type": "number"
+              },
+              "bossMaxInterval": {
+                "type": "number"
+              },
+              "shopMinInterval": {
+                "type": "number"
+              },
+              "shopMaxInterval": {
+                "type": "number"
+              },
+              "spawnSafetySeconds": {
+                "type": "number"
+              },
+              "spawnRetrySeconds": {
+                "type": "number"
+              }
+            }
+          },
+          "shopZone": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "lateralRadius",
+              "longitudinalRadius"
+            ],
+            "properties": {
+              "lateralRadius": {
+                "type": "number"
+              },
+              "longitudinalRadius": {
+                "type": "number"
+              }
+            }
+          },
+          "equipment": {
+            "$ref": "#/components/schemas/EquipmentModifiers"
+          },
+          "randomState": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 4294967295
+          },
+          "counters": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "enemy": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "cast": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "projectile": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "shop": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "enemy",
+              "cast",
+              "projectile",
+              "shop"
+            ]
+          },
+          "generator": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "spawnDistanceRemaining": {
+                "type": "number"
+              },
+              "bossAt": {
+                "type": "number"
+              },
+              "shopDistanceRemaining": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "spawnDistanceRemaining",
+              "bossAt",
+              "shopDistanceRemaining"
+            ]
+          }
+        },
+        "required": [
+          "version",
+          "state",
+          "config",
+          "shopZone",
+          "equipment",
+          "randomState",
+          "counters",
+          "generator"
+        ]
+      },
+      "RunView": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "snapshot": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SimulationSnapshot"
+              },
+              {
+                "type": "object",
+                "description": "Unsupported stored snapshot; client must use trusted runId to close only the run and retain permanent property."
+              }
+            ]
+          },
+          "control": {
+            "type": "string",
+            "enum": [
+              "owner",
+              "readOnly"
+            ]
+          },
+          "ownerEpoch": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "runId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "loot": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "goldMilli",
+              "components"
+            ],
+            "properties": {
+              "goldMilli": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,18})$",
+                "description": "Nonnegative integer milli-gold, max 9223372036854775807; 1000 = 1 gold."
+              },
+              "components": {
+                "$ref": "#/components/schemas/Components"
+              }
+            }
+          }
+        },
+        "required": [
+          "snapshot",
+          "control",
+          "ownerEpoch",
+          "updatedAt",
+          "runId",
+          "loot"
+        ]
+      },
+      "OperationResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "operationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "committed"
+            ]
+          },
+          "profile": {
+            "$ref": "#/components/schemas/Profile"
+          },
+          "run": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "snapshot": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/SimulationSnapshot"
+                  },
+                  {
+                    "type": "object",
+                    "description": "Unsupported stored snapshot; client must use trusted runId to close only the run and retain permanent property."
+                  }
+                ]
+              },
+              "control": {
+                "type": "string",
+                "enum": [
+                  "owner",
+                  "readOnly"
+                ]
+              },
+              "ownerEpoch": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "updatedAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "runId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "loot": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "goldMilli",
+                  "components"
+                ],
+                "properties": {
+                  "goldMilli": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]{0,18})$",
+                    "description": "Nonnegative integer milli-gold, max 9223372036854775807; 1000 = 1 gold."
+                  },
+                  "components": {
+                    "$ref": "#/components/schemas/Components"
+                  }
+                }
+              }
+            },
+            "required": [
+              "snapshot",
+              "control",
+              "ownerEpoch",
+              "updatedAt",
+              "runId",
+              "loot"
+            ],
+            "nullable": true
+          },
+          "replayed": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "operationId",
+          "status",
+          "profile",
+          "run",
+          "replayed"
+        ]
+      },
+      "Operation": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "operationId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "expectedRevision": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "clientId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "start_run"
+                ]
+              },
+              "payload": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {}
+              }
+            },
+            "required": [
+              "operationId",
+              "expectedRevision",
+              "clientId",
+              "type",
+              "payload"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "operationId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "expectedRevision": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "clientId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "advance_run"
+                ]
+              },
+              "payload": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "runId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "ownerEpoch": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  },
+                  "frames": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 120,
+                    "items": {
+                      "type": "array",
+                      "maxItems": 4,
+                      "items": {
+                        "$ref": "#/components/schemas/Command"
+                      }
+                    }
+                  }
+                },
+                "required": [
+                  "runId",
+                  "ownerEpoch",
+                  "frames"
+                ]
+              }
+            },
+            "required": [
+              "operationId",
+              "expectedRevision",
+              "clientId",
+              "type",
+              "payload"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "operationId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "expectedRevision": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "clientId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "pause_run"
+                ]
+              },
+              "payload": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "runId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "ownerEpoch": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "runId",
+                  "ownerEpoch"
+                ]
+              }
+            },
+            "required": [
+              "operationId",
+              "expectedRevision",
+              "clientId",
+              "type",
+              "payload"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "operationId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "expectedRevision": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "clientId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "resume_run"
+                ]
+              },
+              "payload": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "runId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "ownerEpoch": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "runId",
+                  "ownerEpoch"
+                ]
+              }
+            },
+            "required": [
+              "operationId",
+              "expectedRevision",
+              "clientId",
+              "type",
+              "payload"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "operationId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "expectedRevision": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "clientId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "leave_shop"
+                ]
+              },
+              "payload": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "runId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "ownerEpoch": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "runId",
+                  "ownerEpoch"
+                ]
+              }
+            },
+            "required": [
+              "operationId",
+              "expectedRevision",
+              "clientId",
+              "type",
+              "payload"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "operationId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "expectedRevision": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "clientId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "end_run"
+                ]
+              },
+              "payload": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "runId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "ownerEpoch": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "runId",
+                  "ownerEpoch"
+                ]
+              }
+            },
+            "required": [
+              "operationId",
+              "expectedRevision",
+              "clientId",
+              "type",
+              "payload"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "operationId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "expectedRevision": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "clientId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "takeover_run"
+                ]
+              },
+              "payload": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "runId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "required": [
+                  "runId"
+                ]
+              }
+            },
+            "required": [
+              "operationId",
+              "expectedRevision",
+              "clientId",
+              "type",
+              "payload"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "operationId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "expectedRevision": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "clientId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "craft"
+                ]
+              },
+              "payload": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "definitionId": {
+                    "type": "string",
+                    "maxLength": 80
+                  }
+                },
+                "required": [
+                  "definitionId"
+                ]
+              }
+            },
+            "required": [
+              "operationId",
+              "expectedRevision",
+              "clientId",
+              "type",
+              "payload"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "operationId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "expectedRevision": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "clientId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "upgrade"
+                ]
+              },
+              "payload": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "itemId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "required": [
+                  "itemId"
+                ]
+              }
+            },
+            "required": [
+              "operationId",
+              "expectedRevision",
+              "clientId",
+              "type",
+              "payload"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "operationId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "expectedRevision": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "clientId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "equip"
+                ]
+              },
+              "payload": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "slot": {
+                    "type": "string",
+                    "enum": [
+                      "weapon",
+                      "body",
+                      "legs",
+                      "talisman"
+                    ]
+                  },
+                  "itemId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "slot",
+                  "itemId"
+                ]
+              }
+            },
+            "required": [
+              "operationId",
+              "expectedRevision",
+              "clientId",
+              "type",
+              "payload"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "operationId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "expectedRevision": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "clientId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "quick_slots"
+                ]
+              },
+              "payload": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "slots": {
+                    "type": "array",
+                    "minItems": 2,
+                    "maxItems": 2,
+                    "items": {
+                      "type": "string",
+                      "nullable": true,
+                      "enum": [
+                        "slow_dust",
+                        "collector_vial",
+                        null
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "slots"
+                ]
+              }
+            },
+            "required": [
+              "operationId",
+              "expectedRevision",
+              "clientId",
+              "type",
+              "payload"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "operationId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "expectedRevision": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "clientId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "consume"
+                ]
+              },
+              "payload": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "runId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "ownerEpoch": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  },
+                  "definitionId": {
+                    "type": "string",
+                    "enum": [
+                      "slow_dust",
+                      "collector_vial"
+                    ]
+                  }
+                },
+                "required": [
+                  "runId",
+                  "ownerEpoch",
+                  "definitionId"
+                ]
+              }
+            },
+            "required": [
+              "operationId",
+              "expectedRevision",
+              "clientId",
+              "type",
+              "payload"
+            ]
+          }
+        ]
+      },
+      "LogoutRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      },
+      "LogoutResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "ok"
+        ]
       }
     }
   },
-  "x-planned-paths": {
-    "/api/v1/auth/login": {
-      "method": "POST",
-      "release": "R3",
-      "implemented": false,
-      "requestSchema": "LoginRequest",
-      "responseSchema": "Session",
-      "successStatus": 200
-    },
-    "/api/v1/auth/session": {
-      "method": "GET",
-      "release": "R3",
-      "implemented": false,
-      "responseSchema": "Session",
-      "successStatus": 200,
-      "requiresSession": true
-    },
-    "/api/v1/auth/logout": {
-      "method": "POST",
-      "release": "R3",
-      "implemented": false,
-      "successStatus": 204,
-      "requiresSession": true,
-      "requiresCsrf": true
-    },
-    "/api/v1/profile": {
-      "method": "GET",
-      "release": "R3",
-      "implemented": false,
-      "responseSchema": "Profile",
-      "successStatus": 200,
-      "requiresSession": true
-    },
-    "/api/v1/runs": {
-      "method": "POST",
-      "release": "R3",
-      "implemented": false,
-      "requestSchema": "RunStartRequest",
-      "responseSchema": "RunTicket",
-      "successStatus": 201,
-      "requiresSession": true,
-      "requiresCsrf": true
-    },
-    "/api/v1/runs/finish": {
-      "method": "POST",
-      "release": "R3",
-      "implemented": false,
-      "requestSchema": "RunFinishRequest",
-      "responseSchema": "Profile",
-      "successStatus": 200,
-      "requiresSession": true,
-      "requiresCsrf": true
-    }
-  },
+  "x-planned-paths": {},
   "x-internal-contracts": {
     "RunLedger": {
       "release": "R2",

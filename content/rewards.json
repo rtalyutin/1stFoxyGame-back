@@ -1,0 +1,13 @@
+{
+  "version": "r34.1",
+  "components": [
+    { "id": "steel", "label": "Сталь" },
+    { "id": "ember", "label": "Жар" },
+    { "id": "core", "label": "Ядро" }
+  ],
+  "rewards": [
+    { "kind": "normal", "baseGoldMilli": "5000", "commonDrops": 0, "coreDrops": 0, "steelProbability": 0.5 },
+    { "kind": "strong", "baseGoldMilli": "20000", "commonDrops": 1, "coreDrops": 0, "steelProbability": 0.5 },
+    { "kind": "boss", "baseGoldMilli": "100000", "commonDrops": 2, "coreDrops": 1, "steelProbability": 0.5 }
+  ]
+}

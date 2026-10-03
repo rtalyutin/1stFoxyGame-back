@@ -1,4 +1,4 @@
-name: R2 CI
+name: R3-R4 CI
 
 on:
   pull_request:
@@ -15,14 +15,14 @@ defaults:
     shell: bash
 
 concurrency:
-  group: r2-ci-${{ github.workflow }}-${{ github.ref }}
+  group: r34-ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   verify:
-    name: R2 verify
+    name: R3-R4 verify
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 20
     env:
       CI: 'true'
       SOURCE_SHA: ${{ github.sha }}
@@ -62,17 +62,25 @@ jobs:
         env:
           DATABASE_URL: postgresql://foxy_ci:ci_ephemeral_only@127.0.0.1:${{ job.services.postgres.ports[5432] }}/foxy_ci
           PG_TEST_CONTAINER: ${{ job.services.postgres.id }}
-        run: npm run test:db
+        run: timeout --signal=TERM --kill-after=5s 150s npm run test:db
       - name: Build
         run: npm run build
       - name: Package tested build
         run: |
           docker build --build-arg SOURCE_SHA="$SOURCE_SHA" --tag "foxy-back:$SOURCE_SHA" .
+      - name: Migrate the runtime database
+        env:
+          DATABASE_URL: postgresql://foxy_ci:ci_ephemeral_only@127.0.0.1:${{ job.services.postgres.ports[5432] }}/foxy_ci
+        run: npm run db:migrate
       - name: Smoke test container
+        env:
+          DATABASE_URL: postgresql://foxy_ci:ci_ephemeral_only@127.0.0.1:${{ job.services.postgres.ports[5432] }}/foxy_ci
+          SMOKE_ORIGIN: http://127.0.0.1:18080
         run: |
           trap 'docker logs foxy-smoke; docker rm -f foxy-smoke' EXIT
-          docker run --detach --name foxy-smoke --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges:true --publish 127.0.0.1:18080:3001 "foxy-back:$SOURCE_SHA"
-          curl --fail --silent --show-error --retry 10 --retry-delay 1 --retry-all-errors --retry-max-time 30 --max-time 3 --connect-timeout 3 http://127.0.0.1:18080/api/v1/health
+          docker run --detach --name foxy-smoke --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges:true --network host --env DATABASE_URL --env PORT=18080 "foxy-back:$SOURCE_SHA"
+          curl --fail --silent --show-error --retry 10 --retry-delay 1 --retry-all-errors --retry-max-time 30 --max-time 3 --connect-timeout 3 http://127.0.0.1:18080/readyz
+          node test/smoke-pair.mjs
       - name: Verify the packaged migration runner
         env:
           DATABASE_URL: postgresql://foxy_ci:ci_ephemeral_only@127.0.0.1:${{ job.services.postgres.ports[5432] }}/foxy_ci
