@@ -2,10 +2,14 @@
   "openapi": "3.0.3",
   "info": {
     "title": "1stFoxyGame API",
-    "version": "1.0.0-r1",
-    "description": "R1 implements health only. Components and x-planned-paths describe R3 integration boundaries, not available routes. No registration endpoint exists."
+    "version": "1.0.0-r2",
+    "description": "R2 implements health and a validated versioned content catalog. R2 run-event validation is an internal owner-scoped service, without a public session or reward endpoint. x-planned-paths remain R3; no registration endpoint exists."
   },
-  "servers": [{ "url": "/" }],
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
   "paths": {
     "/api/v1/health": {
       "get": {
@@ -15,8 +19,23 @@
         "responses": {
           "200": {
             "description": "API process is reachable; not a database readiness check",
-            "headers": { "Cache-Control": { "schema": { "type": "string", "enum": ["no-store"] } } },
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HealthResponse" } } }
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "no-store"
+                  ]
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -29,8 +48,52 @@
         "responses": {
           "200": {
             "description": "API process is reachable",
-            "headers": { "Cache-Control": { "schema": { "type": "string", "enum": ["no-store"] } } },
-            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HealthResponse" } } }
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "no-store"
+                  ]
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/catalog": {
+      "get": {
+        "operationId": "getContentCatalog",
+        "x-release": "R2",
+        "summary": "Validated R2 enemy, weapon and generator catalog; no account data",
+        "responses": {
+          "200": {
+            "description": "Direct catalog snapshot, validated before serving; client checks paired rules version",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "no-store"
+                  ]
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContentCatalog"
+                }
+              }
+            }
           }
         }
       }
@@ -38,150 +101,936 @@
   },
   "components": {
     "securitySchemes": {
-      "sessionCookie": { "type": "apiKey", "in": "cookie", "name": "__Host-foxy-session", "description": "R3 only. Opaque server session; Secure, HttpOnly, SameSite=Lax, Path=/ and no Domain. CSRF protection is required on mutations." }
+      "sessionCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "__Host-foxy-session",
+        "description": "R3 only. Opaque server session; Secure, HttpOnly, SameSite=Lax, Path=/ and no Domain. CSRF protection is required on mutations."
+      }
     },
     "schemas": {
       "HealthResponse": {
-        "type": "object", "additionalProperties": false,
-        "required": ["status", "apiVersion", "serverTime"],
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "status",
+          "apiVersion",
+          "serverTime"
+        ],
         "properties": {
-          "status": { "type": "string", "enum": ["ok"] },
-          "apiVersion": { "type": "string", "enum": ["1"] },
-          "serverTime": { "type": "string", "format": "date-time" }
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok"
+            ]
+          },
+          "apiVersion": {
+            "type": "string",
+            "enum": [
+              "1"
+            ]
+          },
+          "serverTime": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       },
       "ApiError": {
-        "type": "object", "additionalProperties": false, "required": ["error"],
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "error"
+        ],
         "properties": {
           "error": {
-            "type": "object", "additionalProperties": false, "required": ["code", "message"],
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "code",
+              "message"
+            ],
             "properties": {
-              "code": { "type": "string", "enum": ["NOT_FOUND", "INVALID_REQUEST", "INTERNAL_ERROR", "UNAUTHENTICATED", "FORBIDDEN", "REVISION_CONFLICT", "OPERATION_CONFLICT", "INSUFFICIENT_RESOURCES", "RATE_LIMITED"] },
-              "message": { "type": "string", "maxLength": 512 },
-              "currentRevision": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 }
+              "code": {
+                "type": "string",
+                "enum": [
+                  "NOT_FOUND",
+                  "INVALID_REQUEST",
+                  "INTERNAL_ERROR",
+                  "UNAUTHENTICATED",
+                  "FORBIDDEN",
+                  "REVISION_CONFLICT",
+                  "OPERATION_CONFLICT",
+                  "INSUFFICIENT_RESOURCES",
+                  "RATE_LIMITED"
+                ]
+              },
+              "message": {
+                "type": "string",
+                "maxLength": 512
+              },
+              "currentRevision": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
             }
           }
         }
       },
       "MutationIdentity": {
-        "x-release": "R3", "x-implemented": false,
-        "type": "object", "additionalProperties": false,
-        "required": ["operationId", "expectedRevision"],
+        "x-release": "R3",
+        "x-implemented": false,
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operationId",
+          "expectedRevision"
+        ],
         "properties": {
-          "operationId": { "type": "string", "format": "uuid", "description": "Client-generated once per intent. Retry the identical payload with the same ID." },
-          "expectedRevision": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 }
+          "operationId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Client-generated once per intent. Retry the identical payload with the same ID."
+          },
+          "expectedRevision": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
         }
       },
       "LoginRequest": {
-        "x-release": "R3", "x-implemented": false,
-        "type": "object", "additionalProperties": false, "required": ["login", "password"],
+        "x-release": "R3",
+        "x-implemented": false,
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "login",
+          "password"
+        ],
         "properties": {
-          "login": { "type": "string", "minLength": 1, "maxLength": 128 },
-          "password": { "type": "string", "minLength": 1, "maxLength": 1024, "format": "password", "writeOnly": true }
+          "login": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "password": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024,
+            "format": "password",
+            "writeOnly": true
+          }
         }
       },
       "Session": {
-        "x-release": "R3", "x-implemented": false,
-        "type": "object", "additionalProperties": false, "required": ["accountId", "expiresAt", "csrfToken"],
+        "x-release": "R3",
+        "x-implemented": false,
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "accountId",
+          "expiresAt",
+          "csrfToken"
+        ],
         "properties": {
-          "accountId": { "type": "string", "format": "uuid" },
-          "expiresAt": { "type": "string", "format": "date-time", "description": "Effective server deadline: min(lastActivityAt + idleTTL, issuedAt + absoluteTTL). R1 design defaults for R3 implementation: idle 24 hours, absolute 7 days; configurable, captured at session issuance. Sliding activity never extends beyond absolute expiry. Health and background session checks do not renew idle expiry." },
-          "csrfToken": { "type": "string", "minLength": 32, "maxLength": 256 }
+          "accountId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Effective server deadline: min(lastActivityAt + idleTTL, issuedAt + absoluteTTL). R1 design defaults for R3 implementation: idle 24 hours, absolute 7 days; configurable, captured at session issuance. Sliding activity never extends beyond absolute expiry. Health and background session checks do not renew idle expiry."
+          },
+          "csrfToken": {
+            "type": "string",
+            "minLength": 32,
+            "maxLength": 256
+          }
         }
       },
       "Profile": {
-        "x-release": "R3", "x-implemented": false,
-        "type": "object", "additionalProperties": false,
-        "required": ["accountId", "revision", "gold", "components", "equipment", "consumables"],
+        "x-release": "R3",
+        "x-implemented": false,
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "accountId",
+          "revision",
+          "gold",
+          "components",
+          "equipment",
+          "consumables"
+        ],
         "properties": {
-          "accountId": { "type": "string", "format": "uuid" },
-          "revision": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
-          "gold": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
-          "components": { "type": "array", "maxItems": 2048, "items": { "$ref": "#/components/schemas/InventoryEntry" } },
-          "equipment": { "type": "array", "maxItems": 2048, "items": { "$ref": "#/components/schemas/InventoryEntry" } },
-          "consumables": { "type": "array", "maxItems": 2048, "items": { "$ref": "#/components/schemas/InventoryEntry" } }
+          "accountId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "gold": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "components": {
+            "type": "array",
+            "maxItems": 2048,
+            "items": {
+              "$ref": "#/components/schemas/InventoryEntry"
+            }
+          },
+          "equipment": {
+            "type": "array",
+            "maxItems": 2048,
+            "items": {
+              "$ref": "#/components/schemas/InventoryEntry"
+            }
+          },
+          "consumables": {
+            "type": "array",
+            "maxItems": 2048,
+            "items": {
+              "$ref": "#/components/schemas/InventoryEntry"
+            }
+          }
         }
       },
       "InventoryEntry": {
-        "x-release": "R3", "x-implemented": false,
-        "type": "object", "additionalProperties": false, "required": ["itemId", "quantity"],
+        "x-release": "R3",
+        "x-implemented": false,
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "itemId",
+          "quantity"
+        ],
         "properties": {
-          "itemId": { "type": "string", "minLength": 1, "maxLength": 128 },
-          "quantity": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 }
+          "itemId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
         }
       },
       "Catalog": {
-        "x-release": "R3", "x-implemented": false,
-        "type": "object", "additionalProperties": false, "required": ["version", "items"],
+        "x-release": "R3",
+        "x-implemented": false,
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "version",
+          "items"
+        ],
         "properties": {
-          "version": { "type": "string", "minLength": 1, "maxLength": 64 },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
           "items": {
-            "type": "array", "maxItems": 2048,
+            "type": "array",
+            "maxItems": 2048,
             "items": {
-              "type": "object", "additionalProperties": false, "required": ["id", "kind"],
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "kind"
+              ],
               "properties": {
-                "id": { "type": "string", "minLength": 1, "maxLength": 128 },
-                "kind": { "type": "string", "enum": ["component", "equipment", "consumable"] }
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "component",
+                    "equipment",
+                    "consumable"
+                  ]
+                }
               }
             }
           }
         }
       },
       "RunStartRequest": {
-        "x-release": "R3", "x-implemented": false,
-        "type": "object", "additionalProperties": false,
-        "required": ["operationId", "expectedRevision", "heroId", "abilityId", "rulesVersion"],
+        "x-release": "R3",
+        "x-implemented": false,
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operationId",
+          "expectedRevision",
+          "heroId",
+          "abilityId",
+          "rulesVersion"
+        ],
         "properties": {
-          "operationId": { "type": "string", "format": "uuid" },
-          "expectedRevision": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
-          "heroId": { "type": "string", "minLength": 1, "maxLength": 128 },
-          "abilityId": { "type": "string", "minLength": 1, "maxLength": 128 },
-          "rulesVersion": { "type": "string", "minLength": 1, "maxLength": 64 }
+          "operationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expectedRevision": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "heroId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "abilityId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "rulesVersion": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          }
         }
       },
       "RunTicket": {
-        "x-release": "R3", "x-implemented": false,
-        "type": "object", "additionalProperties": false,
-        "required": ["runId", "seed", "rulesVersion", "startedAt", "revision"],
+        "x-release": "R3",
+        "x-implemented": false,
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "runId",
+          "seed",
+          "rulesVersion",
+          "startedAt",
+          "revision"
+        ],
         "properties": {
-          "runId": { "type": "string", "format": "uuid" },
-          "seed": { "type": "integer", "minimum": 0, "maximum": 4294967295 },
-          "rulesVersion": { "type": "string", "minLength": 1, "maxLength": 64 },
-          "startedAt": { "type": "string", "format": "date-time" },
-          "revision": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 }
+          "runId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "seed": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 4294967295
+          },
+          "rulesVersion": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
         }
       },
       "RunFinishRequest": {
-        "x-release": "R3", "x-implemented": false,
-        "type": "object", "additionalProperties": false,
-        "required": ["runId", "operationId", "expectedRevision", "ticks", "distanceMeters", "kills", "reason"],
+        "x-release": "R3",
+        "x-implemented": false,
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "runId",
+          "operationId",
+          "expectedRevision",
+          "ticks",
+          "distanceMeters",
+          "kills",
+          "reason"
+        ],
         "description": "Untrusted summary. It cannot directly grant currency. R3 reward protocol must include replayable commands/checkpoints before enabling economic settlement.",
         "properties": {
-          "runId": { "type": "string", "format": "uuid" },
-          "operationId": { "type": "string", "format": "uuid" },
-          "expectedRevision": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
-          "ticks": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
-          "distanceMeters": { "type": "number", "minimum": 0, "maximum": 9007199254740991 },
+          "runId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "operationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expectedRevision": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "ticks": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "distanceMeters": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
           "kills": {
-            "type": "object", "additionalProperties": false, "required": ["normal", "strong", "boss"],
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "normal",
+              "strong",
+              "boss"
+            ],
             "properties": {
-              "normal": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
-              "strong": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
-              "boss": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 }
+              "normal": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "strong": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "boss": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
             }
           },
-          "reason": { "type": "string", "enum": ["contact", "breach", "projectile", "abandoned"] }
+          "reason": {
+            "type": "string",
+            "enum": [
+              "contact",
+              "breach",
+              "projectile",
+              "abandoned"
+            ]
+          }
+        }
+      },
+      "ContentCatalog": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "catalogVersion",
+          "rulesVersion",
+          "enemies",
+          "weapons",
+          "rules",
+          "modifiers"
+        ],
+        "properties": {
+          "catalogVersion": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9.-]{0,63}$"
+          },
+          "rulesVersion": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9.-]{0,63}$"
+          },
+          "enemies": {
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 3,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "requiredHits",
+                "radius",
+                "worldSpeed",
+                "weaponCode",
+                "modifiers"
+              ],
+              "properties": {
+                "code": {
+                  "type": "string",
+                  "enum": [
+                    "normal",
+                    "strong",
+                    "boss"
+                  ]
+                },
+                "requiredHits": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "radius": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "worldSpeed": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "weaponCode": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "modifiers": {
+                  "type": "array",
+                  "maxItems": 0,
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "weapons": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "telegraphSeconds",
+                "projectileSpeed",
+                "projectileRadius",
+                "projectileLifetimeSeconds",
+                "shotIntervalSeconds",
+                "anglesDegrees"
+              ],
+              "properties": {
+                "code": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9.-]{0,63}$"
+                },
+                "telegraphSeconds": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "projectileSpeed": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "projectileRadius": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "projectileLifetimeSeconds": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "shotIntervalSeconds": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "anglesDegrees": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 3,
+                  "uniqueItems": true,
+                  "items": {
+                    "type": "number",
+                    "minimum": -90,
+                    "maximum": 90
+                  }
+                }
+              }
+            }
+          },
+          "rules": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "heroSpeed",
+              "lateralSpeed",
+              "heroRadius",
+              "lateralLimit",
+              "enemySpeed",
+              "enemyRadius",
+              "breachOffset",
+              "spawnDistance",
+              "spawnMinSeconds",
+              "spawnMaxSeconds",
+              "maxEnemies",
+              "hookRange",
+              "hookOutboundSpeed",
+              "hookReturnSpeed",
+              "hookCooldown",
+              "hookRadius",
+              "maxShooters",
+              "maxBosses",
+              "maxProjectiles",
+              "shooterUnlockSeconds",
+              "bossFirstSeconds",
+              "bossMinKills",
+              "bossMinInterval",
+              "bossMaxInterval",
+              "shopMinInterval",
+              "shopMaxInterval",
+              "spawnSafetySeconds",
+              "spawnRetrySeconds"
+            ],
+            "properties": {
+              "heroSpeed": {
+                "type": "number",
+                "minimum": 0
+              },
+              "lateralSpeed": {
+                "type": "number",
+                "minimum": 0
+              },
+              "heroRadius": {
+                "type": "number",
+                "minimum": 0
+              },
+              "lateralLimit": {
+                "type": "number",
+                "minimum": 0
+              },
+              "enemySpeed": {
+                "type": "number",
+                "minimum": 0
+              },
+              "enemyRadius": {
+                "type": "number",
+                "minimum": 0
+              },
+              "breachOffset": {
+                "type": "number",
+                "minimum": 0
+              },
+              "spawnDistance": {
+                "type": "number",
+                "minimum": 0
+              },
+              "spawnMinSeconds": {
+                "type": "number",
+                "minimum": 0
+              },
+              "spawnMaxSeconds": {
+                "type": "number",
+                "minimum": 0
+              },
+              "maxEnemies": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "hookRange": {
+                "type": "number",
+                "minimum": 0
+              },
+              "hookOutboundSpeed": {
+                "type": "number",
+                "minimum": 0
+              },
+              "hookReturnSpeed": {
+                "type": "number",
+                "minimum": 0
+              },
+              "hookCooldown": {
+                "type": "number",
+                "minimum": 0
+              },
+              "hookRadius": {
+                "type": "number",
+                "minimum": 0
+              },
+              "maxShooters": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "maxBosses": {
+                "type": "integer",
+                "enum": [
+                  1
+                ]
+              },
+              "maxProjectiles": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "shooterUnlockSeconds": {
+                "type": "number",
+                "minimum": 0
+              },
+              "bossFirstSeconds": {
+                "type": "number",
+                "minimum": 0
+              },
+              "bossMinKills": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "bossMinInterval": {
+                "type": "number",
+                "minimum": 0
+              },
+              "bossMaxInterval": {
+                "type": "number",
+                "minimum": 0
+              },
+              "shopMinInterval": {
+                "type": "number",
+                "minimum": 0
+              },
+              "shopMaxInterval": {
+                "type": "number",
+                "minimum": 0
+              },
+              "spawnSafetySeconds": {
+                "type": "number",
+                "minimum": 0
+              },
+              "spawnRetrySeconds": {
+                "type": "number",
+                "minimum": 0
+              }
+            }
+          },
+          "modifiers": {
+            "type": "array",
+            "maxItems": 0,
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "InternalRunEventBatch": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "batchId",
+          "catalogVersion",
+          "rulesVersion",
+          "events"
+        ],
+        "properties": {
+          "batchId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "catalogVersion": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9.-]{0,63}$"
+          },
+          "rulesVersion": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9.-]{0,63}$"
+          },
+          "events": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 128,
+            "items": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "eventId",
+                    "sequence",
+                    "tick",
+                    "type",
+                    "castId"
+                  ],
+                  "properties": {
+                    "eventId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "sequence": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "tick": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "cast"
+                      ]
+                    },
+                    "castId": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "eventId",
+                    "sequence",
+                    "tick",
+                    "type",
+                    "castId",
+                    "enemyId"
+                  ],
+                  "properties": {
+                    "eventId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "sequence": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "tick": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "hit"
+                      ]
+                    },
+                    "castId": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "enemyId": {
+                      "type": "string",
+                      "maxLength": 96
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "eventId",
+                    "sequence",
+                    "tick",
+                    "type",
+                    "reason",
+                    "enemyId"
+                  ],
+                  "properties": {
+                    "eventId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "sequence": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "tick": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "end"
+                      ]
+                    },
+                    "reason": {
+                      "type": "string",
+                      "enum": [
+                        "hero_hit",
+                        "contact",
+                        "breakthrough"
+                      ]
+                    },
+                    "enemyId": {
+                      "type": "string",
+                      "maxLength": 96
+                    }
+                  }
+                }
+              ]
+            }
+          }
         }
       }
     }
   },
   "x-planned-paths": {
-    "/api/v1/auth/login": { "method": "POST", "release": "R3", "implemented": false, "requestSchema": "LoginRequest", "responseSchema": "Session", "successStatus": 200 },
-    "/api/v1/auth/session": { "method": "GET", "release": "R3", "implemented": false, "responseSchema": "Session", "successStatus": 200, "requiresSession": true },
-    "/api/v1/auth/logout": { "method": "POST", "release": "R3", "implemented": false, "successStatus": 204, "requiresSession": true, "requiresCsrf": true },
-    "/api/v1/profile": { "method": "GET", "release": "R3", "implemented": false, "responseSchema": "Profile", "successStatus": 200, "requiresSession": true },
-    "/api/v1/catalog": { "method": "GET", "release": "R3", "implemented": false, "responseSchema": "Catalog", "successStatus": 200, "requiresSession": true },
-    "/api/v1/runs": { "method": "POST", "release": "R3", "implemented": false, "requestSchema": "RunStartRequest", "responseSchema": "RunTicket", "successStatus": 201, "requiresSession": true, "requiresCsrf": true },
-    "/api/v1/runs/finish": { "method": "POST", "release": "R3", "implemented": false, "requestSchema": "RunFinishRequest", "responseSchema": "Profile", "successStatus": 200, "requiresSession": true, "requiresCsrf": true }
+    "/api/v1/auth/login": {
+      "method": "POST",
+      "release": "R3",
+      "implemented": false,
+      "requestSchema": "LoginRequest",
+      "responseSchema": "Session",
+      "successStatus": 200
+    },
+    "/api/v1/auth/session": {
+      "method": "GET",
+      "release": "R3",
+      "implemented": false,
+      "responseSchema": "Session",
+      "successStatus": 200,
+      "requiresSession": true
+    },
+    "/api/v1/auth/logout": {
+      "method": "POST",
+      "release": "R3",
+      "implemented": false,
+      "successStatus": 204,
+      "requiresSession": true,
+      "requiresCsrf": true
+    },
+    "/api/v1/profile": {
+      "method": "GET",
+      "release": "R3",
+      "implemented": false,
+      "responseSchema": "Profile",
+      "successStatus": 200,
+      "requiresSession": true
+    },
+    "/api/v1/runs": {
+      "method": "POST",
+      "release": "R3",
+      "implemented": false,
+      "requestSchema": "RunStartRequest",
+      "responseSchema": "RunTicket",
+      "successStatus": 201,
+      "requiresSession": true,
+      "requiresCsrf": true
+    },
+    "/api/v1/runs/finish": {
+      "method": "POST",
+      "release": "R3",
+      "implemented": false,
+      "requestSchema": "RunFinishRequest",
+      "responseSchema": "Profile",
+      "successStatus": 200,
+      "requiresSession": true,
+      "requiresCsrf": true
+    }
+  },
+  "x-internal-contracts": {
+    "RunLedger": {
+      "release": "R2",
+      "publicHttpEndpoint": false,
+      "eventBatchSchema": "InternalRunEventBatch",
+      "ownership": "Trusted caller supplies authenticated account subject; no unauthenticated accountId route.",
+      "guarantees": [
+        "runId and server-generated seed bound to account and catalog/rules versions",
+        "stable enemyId and ordered castId",
+        "atomic bounded batches with canonical payload deduplication",
+        "one enemy hit per cast and three distinct casts for the R2 boss",
+        "terminal runs reject new events and all reward payloads"
+      ],
+      "limits": [
+        "In-memory technical ledger; process restart loses runs.",
+        "Client-authoritative R2 events are not geometry verification, anti-cheat, persistence or economic reward authorization.",
+        "R3 must add authenticated durable run/economy transaction before exposing mutation endpoints."
+      ]
+    }
   }
 }
