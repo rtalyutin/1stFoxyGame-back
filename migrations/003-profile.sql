@@ -87,8 +87,13 @@ CREATE TABLE profile_runs (
 CREATE FUNCTION profile_validate_ownership() RETURNS trigger LANGUAGE plpgsql AS $$
 DECLARE e uuid; typ text; owner uuid; slot record; item_owner uuid; gold numeric;
 BEGIN
- e := CASE WHEN TG_TABLE_NAME='entities' THEN CASE WHEN TG_OP='DELETE' THEN OLD.id ELSE NEW.id END
-   ELSE CASE WHEN TG_OP='DELETE' THEN OLD.entity_id ELSE NEW.entity_id END END;
+ -- Each trigger table supplies a different record shape. Separate expressions
+ -- prevent PostgreSQL planning a missing field from an unused CASE branch.
+ IF TG_TABLE_NAME='entities' THEN
+  IF TG_OP='DELETE' THEN e:=OLD.id; ELSE e:=NEW.id; END IF;
+ ELSE
+  IF TG_OP='DELETE' THEN e:=OLD.entity_id; ELSE e:=NEW.entity_id; END IF;
+ END IF;
  SELECT t.code INTO typ FROM entities o JOIN entity_types t ON t.id=o.entity_type_id WHERE o.id=e;
  IF typ='profile' THEN
   SELECT v.value_decimal INTO gold FROM entity_parameter_values v JOIN entity_parameters p ON p.id=v.parameter_id WHERE v.entity_id=e AND p.code='gold-milli';
