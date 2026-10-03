@@ -1,35 +1,24 @@
-# R1: проверка и артефакт (back)
+# R2: backend CI и миграционный gate
 
-Конвейер GitHub Actions `R1 CI` выполняет `npm ci`, проверку типов, тесты, сборку и smoke-тест контейнера для одного SHA. Node.js зафиксирован в `.nvmrc`, npm-зависимости — в `package-lock.json`. Контейнер копирует уже проверенный `dist`; при доставке JavaScript повторно не собирается.
+GitHub Actions `R2 CI` на pull request, push в `main`, `merge_group` или ручной запуск устанавливает lockfile, проверяет типы и контент, запускает API/контрактные тесты и `test:db` на реальном PostgreSQL 18.6 с закреплённым manifest digest. Интеграционные тесты проверяют чистую установку, повторный запуск, переход с более ранней схемы, ограничения БД, checksum drift и реальный backup/restore изолированной схемы. `PG_TEST_CONTAINER` задаёт ID этого временного сервиса: тест запускает штатные `pg_dump`/`pg_restore` PostgreSQL 18 через Docker, затем сравнивает восстановленные данные и журнал миграций. Отсутствие этих инструментов не превращается в успешный skip.
 
-Триггеры: любой pull request, push в `main`, merge queue (`merge_group`) и ручной запуск. Имя итоговой проверки — `R1 verify`. Настройка required check в правилах репозитория выполняется отдельно после первого успешного запуска; наличие файла workflow само по себе её не включает.
+Имя проверки — `R2 verify`. Она не становится required check автоматически. Официальные Actions закреплены полными SHA, Node — `.nvmrc`; токен только `contents: read`, checkout без сохранения credentials, runner одноразовый. PostgreSQL job использует исключительно временный CI пароль; секретов действующего сервера и операции выпуска в workflow нет.
 
-Все Actions закреплены полными SHA официальных репозиториев. Разрешение токена — только `contents: read`; токен не остаётся в git config, npm cache выключен, секретов и шагов публикации нет. Код PR исполняется на одноразовом GitHub-hosted runner. PR-артефакт предназначен для проверки; автоматического продвижения PR-артефакта в рабочую среду нет.
+После сборки Docker копирует проверенный `dist`, `contracts`, `content` и `migrations`. Health проверяется в непривилегированном контейнере с read-only filesystem. Отдельный gate запускает migration CLI дважды из упакованного образа на CI PostgreSQL: отсутствие SQL/каталога внутри образа или ошибка повторяемости прерывает выпуск артефакта.
 
-Артефакт `foxy-back-<SHA>-<attempt>` хранится 14 дней и содержит:
+Артефакт `foxy-back-<SHA>-<attempt>` содержит `image.tar.gz`, `image-id.txt`, `source-sha.txt`, `dist.tar.gz` (включая контракт, каталог и SQL) и `SHA256SUMS`. Он полезен для backend-проверки, но для совместной доставки применяется **frontend CI-артефакт**: он закрепляет конкретный backend SHA и содержит оба образа, совместно прошедшие проверки API и каталога. Образы продвигаются по неизменяемым ID, без пересборки.
 
-- `image.tar.gz`: готовый Docker-образ;
-- `image-id.txt`: неизменяемый локальный SHA256 ID образа;
-- `source-sha.txt`: проверенная Git-ревизия;
-- `dist.tar.gz`: собранное приложение;
-- `SHA256SUMS`: контрольные суммы файлов.
-
-Скачанный артефакт проверяется `sha256sum -c SHA256SUMS`, загружается `docker load -i image.tar.gz`; фактический ID проверяется через `docker image inspect`. Сохраните выбранную пару front/back и их манифесты до истечения срока хранения. Порядок запуска и отката пары находится в `1stFoxyGame-front/deploy/STAGING.md`.
-
-## Локальная проверка
+Локально:
 
 ```sh
 npm ci
 npm run typecheck
+npm run validate:content
 npm test
-npm run build
-docker build --build-arg SOURCE_SHA=local --tag foxy-back:local .
+# Только адрес тестовой PostgreSQL 18:
+DATABASE_URL=postgresql://user:password@localhost:5432/test npm run test:db
 ```
 
-Dockerfile рассчитан на готовый `dist`, поэтому запуск сборки контейнера до `npm run build` должен завершиться ошибкой. Локальная успешная проверка не означает, что GitHub Actions уже выполнился. Само создание CI-файла также не означает наличие доступного staging.
+Реальный VPS rollout и наблюдение runtime выполняет оператор по `1stFoxyGame-front/deploy/STAGING-R2.md`. Успешный CI подтверждает проверенную сборку, но не публичный HTTPS, текущую production-версию или поведение реального телефона.
 
-## Обновления инструментов
-
-Версии `.nvmrc` и Node в Dockerfile бэка меняются согласованно. Базовые образы закреплены версией и manifest digest, проверенными через официальный Docker Hub API. В staging продвигается уже собранный образ по ID. Обновление базового образа выполняется отдельным PR с повторной проверкой; незаметного перехода на новый digest при доставке нет.
-
-Официальные справки: [workflow syntax](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax), [artifacts](https://docs.github.com/en/actions/tutorials/store-and-share-data), [Node.js releases](https://nodejs.org/en/about/previous-releases).
+Источники: [workflow syntax](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax), [метаданные PostgreSQL образа](https://github.com/docker-library/repo-info/blob/master/repos/postgres/remote/18.6-bookworm.md).

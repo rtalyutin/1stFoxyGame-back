@@ -8,6 +8,8 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
 COPY dist/ ./dist/
 COPY contracts/ ./contracts/
+COPY content/ ./content/
+COPY migrations/ ./migrations/
 USER node
 EXPOSE 3001
 HEALTHCHECK --interval=15s --timeout=3s --start-period=5s --retries=3 \

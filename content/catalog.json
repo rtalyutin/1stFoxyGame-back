@@ -1,0 +1,25 @@
+{
+  "catalogVersion": "r2.1",
+  "rulesVersion": "r2.1",
+  "enemies": [
+    {"code":"normal","requiredHits":1,"radius":0.45,"worldSpeed":1,"weaponCode":null,"modifiers":[]},
+    {"code":"strong","requiredHits":1,"radius":0.55,"worldSpeed":1,"weaponCode":"strong-shot","modifiers":[]},
+    {"code":"boss","requiredHits":3,"radius":1,"worldSpeed":0.5,"weaponCode":"boss-volley","modifiers":[]}
+  ],
+  "weapons": [
+    {"code":"strong-shot","telegraphSeconds":0.8,"projectileSpeed":8,"projectileRadius":0.12,"projectileLifetimeSeconds":8,"shotIntervalSeconds":3,"anglesDegrees":[0]},
+    {"code":"boss-volley","telegraphSeconds":1,"projectileSpeed":8,"projectileRadius":0.12,"projectileLifetimeSeconds":8,"shotIntervalSeconds":3.5,"anglesDegrees":[-15,0,15]}
+  ],
+  "rules": {
+    "heroSpeed":2,"lateralSpeed":6,"heroRadius":0.35,"lateralLimit":4.5,
+    "enemySpeed":1,"enemyRadius":0.45,"breachOffset":1,"spawnDistance":36,
+    "spawnMinSeconds":2.8,"spawnMaxSeconds":3.4,"maxEnemies":8,
+    "hookRange":30,"hookOutboundSpeed":35,"hookReturnSpeed":45,"hookCooldown":2,"hookRadius":0.35,
+    "maxShooters":2,"maxBosses":1,"maxProjectiles":24,
+    "shooterUnlockSeconds":30,"bossFirstSeconds":90,"bossMinKills":25,
+    "bossMinInterval":90,"bossMaxInterval":150,
+    "shopMinInterval":55,"shopMaxInterval":75,
+    "spawnSafetySeconds":2,"spawnRetrySeconds":0.25
+  },
+  "modifiers": []
+}

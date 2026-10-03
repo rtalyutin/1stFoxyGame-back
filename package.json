@@ -1,6 +1,6 @@
 {
   "name": "1stfoxygame-back",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -11,14 +11,20 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "npm run build && node --test test/*.test.mjs",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "validate:content": "npm run build && node dist/game/validate-content-cli.js && node dist/db/content-generate-cli.js",
+    "content:generate": "npm run build && node dist/db/content-generate-cli.js --write",
+    "db:migrate": "node dist/db/migrate-cli.js",
+    "test:db": "npm run build && node --test test/db/*.test.mjs"
   },
   "dependencies": {
-    "fastify": "5.12.5"
+    "fastify": "5.12.5",
+    "pg": "8.23.1"
   },
   "devDependencies": {
     "@apidevtools/swagger-parser": "13.1.0",
     "@types/node": "24.19.1",
+    "@types/pg": "8.23.1",
     "ajv": "8.20.0",
     "ajv-formats": "3.0.1",
     "tsx": "4.23.15",
