@@ -1,43 +1,35 @@
-# 1stFoxyGame backend — R2
+# FoxyGame backend — R3/R4 без графики
 
-R2 добавляет проверяемый каталог стрелка/босса, типизированный конструктор PostgreSQL 18 с миграциями и внутренний протокол событий забега. TypeScript, Fastify 5, Node.js 24.19.0. Аккаунты, авторизация, профиль и экономика остаются R3. HTTP-процесс R2 читает проверенный каталог из версии приложения и не получает доступ к БД; миграционный контейнер выполняется отдельно.
-
-Основание: `Runner-Forge-GDD-TZ-v1.0.md`, B05–B07 согласованного `Runner-Forge-Release-Plan.xls` и ACTIVE_CONTRACT в парной front-ревизии; уточнения: герой погибает от одной пули, сильный крип — от одного хука, босс — от трёх разных попаданий. Аккаунты создаёт владелец миграциями через PR, регистрации нет.
+Серверный профиль, вход в заранее выданный аккаунт, пересчёт боя, магазин, крафт, экипировка, улучшения и расходники. Кошелёк, имущество, награды и снимок записываются транзакционно в PostgreSQL 18. Публичной регистрации нет.
 
 ## Запуск
 
-```sh
+```bash
 npm ci
 npm run build
-npm start
+npm run typecheck
+npm test
+npm run validate:content
 ```
 
-По умолчанию `127.0.0.1:3001`. Для контейнера задайте `HOST=0.0.0.0`. `PORT` допускает целое число 1–65535. `.env.example` документирует настройки; приложение получает переменные из окружения и не загружает `.env` автоматически.
+Задать ровно одно из `DATABASE_URL` и `DATABASE_URL_FILE`, применить миграции владельцем схемы, затем `npm start`. Приложение не переходит на память при сбое БД. `MemoryRepository` используется только явным тестовым внедрением. По умолчанию `HOST=127.0.0.1`, `PORT=3001`; файл `.env` автоматически не загружается.
 
-Для разработки `npm run dev`. Проверки: `npm test`, `npm run typecheck`, `npm run validate:content`. Сборка создаёт `dist/`; пакету также нужны `contracts/`, `content/`, `migrations/`. Не добавляйте `.env`, `node_modules` или `dist` в Git.
+`npm run test:db` требует отдельную PostgreSQL 18 и средства `pg_dump`/`pg_restore` либо `PG_TEST_CONTAINER`. Тесты создают уникальные схемы; отсутствие БД является ошибкой. Не запускать на рабочей БД.
 
-## Действующий API
+## Контракт и доступ
 
-`GET /api/v1/health` (алиас `GET /healthz`) возвращает:
+Машинный контракт: [OpenAPI](contracts/openapi.json). Правила и принятые начальные настройки: [R3/R4](docs/r3-r4.md).
 
-```json
-{"status":"ok","apiVersion":"1","serverTime":"2026-10-02T14:47:21.000Z"}
-```
+Рабочие маршруты с префиксом `/api/v1`: `/auth/login`, `/auth/logout`, `/session`, `/profile`, `/economy/catalog`, `/run`, `/operations` и `/operations/:operationId`. Session привязывает приватные чтения и записи к аккаунту; изменения требуют same-origin JSON и CSRF. `/api/v1/health` и `/healthz` проверяют процесс. `/readyz` проверяет БД и требуемую схему; при сбое отдаёт 503. Контейнерная healthcheck использует readiness.
 
-Ответ всегда `Cache-Control: no-store`. Это проверка процесса API, не проверка базы или игровой сессии. `GET /api/v1/catalog` отдаёт проверенный снимок [catalog.json](content/catalog.json) с `catalogVersion: r2.1` и `rulesVersion: r2.1`. Клиент сверяет версии и параметры своей сборки перед новым забегом. R2 не требует входа: интерфейс логина и реальные аккаунты идут в R3. Все будущие маршруты и регистрация возвращают 404.
+Аккаунт создаётся контролируемой миграцией идентичности: стабильные UUID/login в PR, credential-файл вне репозитория. `dist/profile/hash-cli.js` готовит защищённый файл хэшей; `provision-cli.js --file` применяет его идемпотентно без сброса имущества или пароля; `password-cli.js --rotate --file` отдельно меняет пароль и отзывает сессии. Нет account-create HTTP endpoint.
 
-Фронт обращается к `/api/v1/health` через свой origin: Vite proxy локально, reverse proxy в среде. Произвольный CORS не включён. Детали сетевой паузы, доверия, будущих сессий и транзакций: [architecture.md](docs/architecture.md). Целевой типизированный конструктор: [data-model.md](docs/data-model.md).
+## Хранение и доставка
 
-Единственный машинный HTTP-контракт — [openapi.json](contracts/openapi.json). Его `paths` содержат работающие маршруты. `x-planned-paths`, `x-release: R3`, `x-implemented: false` описывают проектные контракты следующих релизов; наличие схемы не означает реализацию.
+Аккаунт, профиль, экземпляры и сборки хранятся в типизированном конструкторе `entities/entity_parameters/entity_parameter_values`. Сессии, receipts и снимки — технические таблицы. Золото — целая строка тысячных долей, расчёты — BigInt. Награды определяет сервер после пересчёта кадров; клиент передаёт только ввод.
 
-## Конструктор и проверки
+Одинаковый operationId и тело возвращают прежний результат; изменённое тело отклоняется. Revision и активный клиент проверяются в транзакции. Takeover явный, offline не симулирует бой. Повреждённый snapshot можно завершить без потери имущества.
 
-На отдельной PostgreSQL 18: `npm run build`, затем `npm run db:migrate`. Установите ровно одну переменную `DATABASE_URL` или `DATABASE_URL_FILE` (файл с URL). Миграционный пользователь владеет схемой; HTTP-контейнер R2 не получает этот секрет. Миграции транзакционные, сериализованы advisory lock и проверяют checksum уже применённых файлов. Применённые миграции не редактируются.
+CI проверяет настоящую БД, повтор миграции, runtime grants, создание аккаунтов, откат неудачной операции и восстановление копии. Парный frontend CI закрепляет backend SHA, сравнивает каталоги и код симуляции, запускает оба контейнера с БД и выпускает один комплект. Production rollout не объявляется выполненным по CI. Инструкция поставки — в парном frontend `deploy/R3-R4.md`.
 
-`npm run test:db` требует `DATABASE_URL` тестовой БД и PostgreSQL 18. Тесты создают и удаляют только уникальные `foxy_test_*` схемы. Для настоящего backup/restore нужны PG18 `pg_dump`/`pg_restore`: переменные `PG_DUMP_BIN`/`PG_RESTORE_BIN` либо `PG_TEST_CONTAINER` с ID тестового Docker-контейнера PostgreSQL. Отсутствие БД/инструментов — ошибка, не пропущенный PASS. Не запускать тесты на production.
-
-HTTP, каталог, OpenAPI и внутренний owner-scoped RunLedger проверяются `npm test`. DB fixtures отдельно проверяют ограничения самой PostgreSQL, повтор/upgrade/checksum миграции, rollback частичного DDL, конкурирующую уникальность и настоящее восстановление dump. Это авторские проверки; результат независимой QA и CI относится к указанной ревизии. Пределы R2 и соответствие задачам: [r2.md](docs/r2.md). Авторизация и экономические транзакции ещё не реализованы.
-
-## Источники выбора
-
-Проверены 2026-10-02: [Fastify testing](https://fastify.dev/docs/latest/Guides/Testing/), [Fastify TypeScript](https://fastify.dev/docs/latest/Reference/TypeScript/), [PostgreSQL 18 constraints](https://www.postgresql.org/docs/18/ddl-constraints.html), [PostgreSQL constraint triggers](https://www.postgresql.org/docs/18/sql-createtrigger.html). Конкретные зависимости закреплены в `package-lock.json`.
+Прежние R1/R2 документы сохранены как история. Новая графика и видимая экипировка исключены указанием пользователя.

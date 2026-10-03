@@ -1,6 +1,6 @@
 {
   "name": "1stfoxygame-back",
-  "version": "0.2.0",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -12,10 +12,14 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "npm run build && node --test test/*.test.mjs",
     "start": "node dist/server.js",
-    "validate:content": "npm run build && node dist/game/validate-content-cli.js && node dist/db/content-generate-cli.js",
+    "validate:content": "npm run build && node dist/game/validate-content-cli.js && node dist/db/content-generate-cli.js && node dist/db/economy-generate-cli.js",
     "content:generate": "npm run build && node dist/db/content-generate-cli.js --write",
     "db:migrate": "node dist/db/migrate-cli.js",
-    "test:db": "npm run build && node --test test/db/*.test.mjs"
+    "test:db": "npm run build && node --test test/db/*.test.mjs",
+    "account:hash": "node dist/profile/hash-cli.js",
+    "account:provision": "node dist/profile/provision-cli.js",
+    "account:password": "node dist/profile/password-cli.js",
+    "economy:generate": "npm run build && node dist/db/economy-generate-cli.js --write"
   },
   "dependencies": {
     "fastify": "5.12.5",
