@@ -6,7 +6,7 @@ import {createAuthRuntime,type AuthMail} from '../server/auth.ts';
 import {createDatabase,type Database} from '../server/database.ts';
 import {R1Store} from '../server/r1-store.ts';
 import {seedR1Metadata} from '../server/r1-metadata.ts';
-import {BUILD_CONTEXT} from '../src/snapshot-v1.ts';
+import {CURRENT_BUILD_CONTEXT as BUILD_CONTEXT} from '../src/snapshot-v1.ts';
 // @ts-expect-error The isolated PostgreSQL harness is plain JS.
 import {startPostgresFixture} from './data-pg-helper.mjs';
 

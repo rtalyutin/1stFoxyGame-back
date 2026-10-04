@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import {readFile} from 'node:fs/promises';
-import { RULES } from '../src/contracts.ts';
+import { RULES, TUTORIAL_RULES } from '../src/contracts.ts';
 import type { Sql } from './database.ts';
 export interface Parameter { code:string;type:'text'|'integer'|'number'|'boolean'|'timestamp'|'reference';optional?:boolean;ref?:string;min?:number;max?:number;length?:number }
 const t=(code:string,optional=false,length=256):Parameter=>({code,type:'text',optional,length});
@@ -14,7 +14,7 @@ export const TYPES:Record<string,{global?:boolean;parent?:string;params:Paramete
  game_run:{params:[r('level_ref','level_definition'),t('client_build_id'),t('content_version'),t('rules_version'),t('lifecycle'),dt('started_at'),dt('finished_at',true),i('active_tick'),i('result_score'),t('outcome_reason',true,300)]},
  checkpoint:{parent:'game_run',params:[r('run_ref','game_run'),i('schema_version',1,1),i('sim_tick'),i('rng_state',1,1),t('outcome'),t('reason',true,300),n('distance',0,1000),i('placed_sequence',1)]},
  actor_state:{parent:'checkpoint',params:[r('checkpoint_ref','checkpoint'),t('actor_key'),t('actor_kind'),n('x'),n('y'),n('vx',-100,100),n('vy',-100,100),n('hp',0,100),t('state'),t('support_space',true),i('support_x',-10000,10000,true),i('support_y',-10000,10000,true),t('support_block_id',true),r('held_actor_ref','actor_state',true)]},
- house_state:{parent:'checkpoint',params:[r('checkpoint_ref','checkpoint'),n('x'),n('y'),n('core_hp',0,100),t('movement_state'),i('support_loss_ticks',0,90)]},
+ house_state:{parent:'checkpoint',params:[r('checkpoint_ref','checkpoint'),n('x'),n('y'),n('core_hp',0,100),t('movement_state'),i('support_loss_ticks',0,90),i('support_loss_ticks_v2',0,240,true)]},
  cell_override:{parent:'checkpoint',params:[r('checkpoint_ref','checkpoint'),t('coordinate_space'),i('x',-10000,10000),i('y',-10000,10000),t('operation'),t('base_block_id',true),r('block_definition_ref','block_definition',true),t('block_id',true),t('original_block_id',true)]},
  inventory_item:{parent:'checkpoint',params:[r('checkpoint_ref','checkpoint'),r('material_ref','block_definition'),i('quantity',0,12)]},
  asset_definition:{global:true,params:[t('code'),t('kind'),t('relative_path'),t('sha256',false,64),t('source'),t('license'),t('attribution'),t('version')]},
@@ -23,6 +23,13 @@ export const TYPES:Record<string,{global?:boolean;parent?:string;params:Paramete
  level_definition:{global:true,params:[t('code'),t('title'),t('content_version'),r('map_asset_ref','asset_definition'),r('house_blueprint_ref','asset_definition'),r('ruleset_ref','ruleset'),t('publication_state')]},
 };
 export const CONTENT_IDS={map:'c4b902a6-1532-4212-8b21-000000000001',blueprint:'c4b902a6-1532-4212-8b21-000000000002',texture:'c4b902a6-1532-4212-8b21-000000000003',wood:'c4b902a6-1532-4212-8b21-000000000004',rules:'c4b902a6-1532-4212-8b21-000000000005',level:'c4b902a6-1532-4212-8b21-000000000006'};
+export const INTRO_CONTENT_IDS={...CONTENT_IDS,map:'c4b902a6-1532-4212-8b21-000000000011',blueprint:'c4b902a6-1532-4212-8b21-000000000012',rules:'c4b902a6-1532-4212-8b21-000000000015',level:'c4b902a6-1532-4212-8b21-000000000016'};
+export function contentIds(version:string){
+ if(version==='r1-map-1')return CONTENT_IDS;
+ if(version==='r1-map-2')return INTRO_CONTENT_IDS;
+ throw new Error('Unsupported content version');
+}
+
 const columns={text:'value_text',integer:'value_integer',number:'value_number',boolean:'value_boolean',timestamp:'value_timestamp',reference:'value_reference'};
 export async function writeValues(tx:Sql,id:string,type:string,values:Record<string,unknown>):Promise<void>{
  for(const p of TYPES[type].params){const v=values[p.code];if(v===undefined||v===null)continue;
@@ -52,5 +59,12 @@ export async function seedR1Metadata(tx:Sql):Promise<void>{
   {id:CONTENT_IDS.rules,type:'ruleset',values:{code:'r1-rules-1',version:'r1-rules-1',tick_rate:RULES.tickRate,house_speed:RULES.houseSpeed,move_speed:RULES.moveSpeed,jump_speed:RULES.jumpSpeed,gravity:RULES.gravity,support_grace_ticks:Math.round(RULES.supportGrace*RULES.tickRate),victory_base:1000,retained_bonus:400,time_bonus:300}},
   {id:CONTENT_IDS.level,type:'level_definition',values:{code:'house-bridge-portal',title:'Дом — мост — портал',content_version:'r1-map-1',map_asset_ref:CONTENT_IDS.map,house_blueprint_ref:CONTENT_IDS.blueprint,ruleset_ref:CONTENT_IDS.rules,publication_state:'published'}},
  ];
+ const intro=INTRO_CONTENT_IDS, rules=TUTORIAL_RULES;
+ global.push(
+  {id:intro.map,type:'asset_definition',values:{code:'r1-map-2',kind:'procedural-map',relative_path:'content/r1-map-2.json',sha256:await assetHash('r1-map-2'),source:'FoxyGames',license:'project-original',attribution:'FoxyGames',version:'r1-map-2'}},
+  {id:intro.blueprint,type:'asset_definition',values:{code:'r1-house-2',kind:'procedural-blueprint',relative_path:'content/r1-house-2.json',sha256:await assetHash('r1-house-2'),source:'FoxyGames',license:'project-original',attribution:'FoxyGames',version:'r1-map-2'}},
+  {id:intro.rules,type:'ruleset',values:{code:'r1-rules-2',version:'r1-rules-2',tick_rate:rules.tickRate,house_speed:rules.houseSpeed,move_speed:rules.moveSpeed,jump_speed:rules.jumpSpeed,gravity:rules.gravity,support_grace_ticks:Math.round(rules.supportGrace*rules.tickRate),victory_base:1000,retained_bonus:400,time_bonus:300}},
+  {id:intro.level,type:'level_definition',values:{code:'house-bridge-portal-intro',title:'Первый мост',content_version:'r1-map-2',map_asset_ref:intro.map,house_blueprint_ref:intro.blueprint,ruleset_ref:intro.rules,publication_state:'published'}}
+ );
  for(const e of global){const existing=await tx.query('SELECT id FROM syezzhaem.entities WHERE id=$1',[e.id]);if(existing.rows.length){for(const[code,value]of Object.entries(e.values)){const parameter=TYPES[e.type].params.find(p=>p.code===code)!;const stored=await tx.query<Record<string,unknown>>(`SELECT ${columns[parameter.type]} AS value FROM syezzhaem.entity_parameter_values WHERE entity_id=$1 AND parameter_id=$2`,[e.id,`${e.type}.${code}`]);const actual=stored.rows[0]?.value;if(parameter.type==='integer'?Number(actual)!==value:actual!==value)throw new Error(`Immutable content mismatch: ${e.type}.${code}`)}continue;}await tx.query('INSERT INTO syezzhaem.entities(id,entity_type_id,owner_user_id) VALUES($1,$2,NULL)',[e.id,e.type]);await writeValues(tx,e.id,e.type,e.values);}
 }

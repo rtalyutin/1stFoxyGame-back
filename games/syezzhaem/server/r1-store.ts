@@ -1,7 +1,7 @@
 import { createHash,randomUUID } from 'node:crypto';
 import { BUILD_CONTEXT,createSnapshotV1,validateSnapshotV1,scoreSnapshot,type SnapshotV1,type BuildContext } from '../src/snapshot-v1.ts';
 import type { Database,Sql } from './database.ts';
-import { CONTENT_IDS,TYPES,writeValues,seedR1Metadata } from './r1-metadata.ts';
+import { CONTENT_IDS,INTRO_CONTENT_IDS,contentIds,TYPES,writeValues,seedR1Metadata } from './r1-metadata.ts';
 export class DomainError extends Error {constructor(public code:string,message:string,public status=400,public path?:string,public details?:unknown){super(message)}}
 export interface ProfileDTO{profile_id:string;revision:number;display_name:string;sound_enabled:boolean;sound_volume:number;quality:'low'|'medium';controls_hint_seen:boolean}
 export interface RunDTO{run_id:string;revision:number;lifecycle:'active'|'won'|'lost'|'abandoned';checkpoint:SnapshotV1;updated_at:string;started_at:string;result?:ReturnType<typeof scoreSnapshot>}
@@ -20,7 +20,7 @@ export class R1Store {
  constructor(public db:Database){}
  /** Explicit local/dev initializer only; PostgreSQL startup never invokes it. */
  async seedForLocalTests(){await this.db.transaction('',tx=>seedR1Metadata(tx))}
- async check(){const r=await this.db.query('SELECT version FROM syezzhaem.schema_migrations WHERE version=1');if(!r.rows.length)throw new Error('R1 migration unavailable');const c=await this.db.query('SELECT id FROM syezzhaem.entities WHERE id=$1',[CONTENT_IDS.level]);if(!c.rows.length)throw new Error('R1 immutable content unavailable')}
+ async check(){const r=await this.db.query('SELECT version FROM syezzhaem.schema_migrations WHERE version=1');if(!r.rows.length)throw new Error('R1 migration unavailable');const c=await this.db.query('SELECT id FROM syezzhaem.entities WHERE id=ANY($1::uuid[])',[[CONTENT_IDS.level,INTRO_CONTENT_IDS.level]]);if(c.rows.length!==2)throw new Error('R1 immutable content unavailable')}
  private owner(owner:string){if(typeof owner!=='string'||!owner.length||owner.length>128)throw new DomainError('NOT_FOUND','Authenticated user required',401)}
  private async profile(tx:Sql,owner:string,lock=true):Promise<{id:string;dto:ProfileDTO}>{
   if(lock)await tx.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))',[`syezzhaem-profile:${owner}`]);
@@ -60,7 +60,7 @@ export class R1Store {
   const active=(await tx.query<{run_id:string}>('SELECT run_id FROM syezzhaem.active_run_index WHERE user_id=$1',[owner])).rows[0];if(active)throw new DomainError('ACTIVE_RUN_EXISTS','Continue or abandon the active run',409,undefined,{run_id:active.run_id});
   const id=randomUUID(),checkpoint=createSnapshotV1(id,activeBuild),now=new Date().toISOString();
   await tx.query("INSERT INTO syezzhaem.entities(id,entity_type_id,owner_user_id) VALUES($1,'game_run',$2)",[id,owner]);
-  await writeValues(tx,id,'game_run',{level_ref:CONTENT_IDS.level,client_build_id:activeBuild.client_build_id,content_version:activeBuild.content_version,rules_version:activeBuild.rules_version,lifecycle:'active',started_at:now,active_tick:0,result_score:0});
+  await writeValues(tx,id,'game_run',{level_ref:contentIds(activeBuild.content_version).level,client_build_id:activeBuild.client_build_id,content_version:activeBuild.content_version,rules_version:activeBuild.rules_version,lifecycle:'active',started_at:now,active_tick:0,result_score:0});
   await this.writeCheckpoint(tx,owner,id,checkpoint);await tx.query('INSERT INTO syezzhaem.active_run_index(user_id,run_id) VALUES($1,$2)',[owner,id]);
   const dto=await this.readRun(tx,owner,id);await this.ack(tx,owner,'run_start_v1',body,dto);return dto;
  })}
@@ -101,7 +101,7 @@ export class R1Store {
   const checkpoint=randomUUID();const children:{id:string;type:string;parent:string;values:Record<string,unknown>;keys?:[string,string][]}[]=[
    {id:checkpoint,type:'checkpoint',parent:id,values:{run_ref:id,schema_version:s.schema_version,sim_tick:s.sim_tick,rng_state:s.rng_state,outcome:s.outcome,reason:s.reason,distance:s.counters.distance,placed_sequence:s.counters.placed_sequence}},
    {id:randomUUID(),type:'actor_state',parent:checkpoint,values:{checkpoint_ref:checkpoint,actor_key:'player',actor_kind:'player',x:s.player.x,y:s.player.y,vx:s.player.vx,vy:s.player.vy,hp:s.player.hp,state:'active',support_space:s.player.support?.coordinate_space,support_x:s.player.support?.x,support_y:s.player.support?.y,support_block_id:s.player.support?.block_id},keys:[['actor','player']]},
-   {id:randomUUID(),type:'house_state',parent:checkpoint,values:{checkpoint_ref:checkpoint,...s.house}},
+   {id:randomUUID(),type:'house_state',parent:checkpoint,values:{checkpoint_ref:checkpoint,...s.house,support_loss_ticks:s.content_version==='r1-map-2'?0:s.house.support_loss_ticks,support_loss_ticks_v2:s.content_version==='r1-map-2'?s.house.support_loss_ticks:undefined}},
    {id:randomUUID(),type:'inventory_item',parent:checkpoint,values:{checkpoint_ref:checkpoint,material_ref:CONTENT_IDS.wood,quantity:s.inventory.wood},keys:[['material',CONTENT_IDS.wood]]},
   ];
   for(const space of['house','world']as const)for(const c of s[`${space}_cells`])children.push({id:randomUUID(),type:'cell_override',parent:checkpoint,values:{checkpoint_ref:checkpoint,coordinate_space:space,x:c.x,y:c.y,operation:c.operation,base_block_id:c.base_block_id,block_definition_ref:c.material?CONTENT_IDS.wood:undefined,block_id:c.block_id,original_block_id:c.original_block_id},keys:[['cell',`${space}:${c.x}:${c.y}`],...(c.block_id?[['block',c.block_id]as[string,string]]:[])]});
@@ -115,9 +115,9 @@ export class R1Store {
   const root=await this.root(tx,owner,id,false),map=await this.aggregate(tx,id,owner),all=(type:string)=>[...map.values()].filter(e=>e.type===type).map(e=>e.values);
   const run=map.get(id)!.values,c=all('checkpoint')[0],p=all('actor_state')[0],h=all('house_state')[0],inv=all('inventory_item')[0];if(!c||!p||!h||!inv)throw new Error('Incomplete EAV run aggregate');
   const cells=(space:string)=>all('cell_override').filter(v=>v.coordinate_space===space).map(v=>({x:v.x,y:v.y,operation:v.operation,base_block_id:v.base_block_id??null,block_id:v.block_id??null,original_block_id:v.original_block_id??null,material:v.block_definition_ref?'wood':null}));
-  const snapshot=validateSnapshotV1({schema_version:c.schema_version,run_id:id,client_build_id:run.client_build_id,content_version:run.content_version,rules_version:run.rules_version,level_id:'house-bridge-portal',sim_tick:c.sim_tick,rng_state:c.rng_state,outcome:c.outcome,reason:c.reason??null,
+  const snapshot=validateSnapshotV1({schema_version:c.schema_version,run_id:id,client_build_id:run.client_build_id,content_version:run.content_version,rules_version:run.rules_version,level_id:run.level_ref===INTRO_CONTENT_IDS.level?'house-bridge-portal-intro':'house-bridge-portal',sim_tick:c.sim_tick,rng_state:c.rng_state,outcome:c.outcome,reason:c.reason??null,
    player:{x:p.x,y:p.y,vx:p.vx,vy:p.vy,hp:p.hp,support:p.support_space===undefined?null:{coordinate_space:p.support_space,x:p.support_x,y:p.support_y,block_id:p.support_block_id},held_actor_key:null,timers:{}},
-   house:{x:h.x,y:h.y,core_hp:h.core_hp,movement_state:h.movement_state,support_loss_ticks:h.support_loss_ticks},house_cells:cells('house'),world_cells:cells('world'),inventory:{wood:inv.quantity},actors:[],lava:null,counters:{distance:c.distance,placed_sequence:c.placed_sequence}});
+   house:{x:h.x,y:h.y,core_hp:h.core_hp,movement_state:h.movement_state,support_loss_ticks:run.content_version==='r1-map-2'?h.support_loss_ticks_v2:h.support_loss_ticks},house_cells:cells('house'),world_cells:cells('world'),inventory:{wood:inv.quantity},actors:[],lava:null,counters:{distance:c.distance,placed_sequence:c.placed_sequence}});
   const dto:RunDTO={run_id:id,revision:root.revision,lifecycle:run.lifecycle as RunDTO['lifecycle'],checkpoint:snapshot,updated_at:time(root.updated_at),started_at:time(run.started_at)};if(dto.lifecycle==='won'||dto.lifecycle==='lost')dto.result=scoreSnapshot(snapshot);return dto;
  }
  async history(owner:string,input:unknown={}){this.owner(owner);const body=exact(input,[],['cursor','page_size']);const size=body.page_size??10;if(typeof size!=='number'||!Number.isInteger(size)||size<1||size>30)throw new DomainError('VALIDATION_FAILED','Page size 1..30 required',400,'page_size');let cursor:{created_at:string;id:string}|null=null;

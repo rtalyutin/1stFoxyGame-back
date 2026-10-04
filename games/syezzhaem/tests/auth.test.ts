@@ -36,7 +36,7 @@ test('Better Auth real PostgreSQL: verification, reset, persistent session and o
       assert.equal(signup.statusCode,200);await auth.flushMail();assert.equal(mails.length,1);
       const signin=await authPost('sign-in/email',{email:'one@example.test',password});
       assert.equal(signin.statusCode,403);
-      const result=await rpc('bootstrap_v1',{client_build:'r1-local-001'});
+      const result=await rpc('bootstrap_v1',{client_build:'r1-intro-001'});
       assert.equal(result.statusCode,401);
       assert.equal(Number((await pg.admin.query("SELECT count(*) AS n FROM syezzhaem.entities WHERE entity_type_id='player_profile'")).rows[0].n),0);
     });
@@ -55,10 +55,10 @@ test('Better Auth real PostgreSQL: verification, reset, persistent session and o
       }
     });
     await t.test('bootstrap is idempotent; server chooses owner; successful start retries same run',async()=> {
-      const first=(await rpc('bootstrap_v1',{client_build:'r1-local-001'},cookie)).json();assert.equal(first.ok,true);
-      const second=(await rpc('bootstrap_v1',{client_build:'r1-local-001'},cookie)).json();assert.deepEqual(first.data.profile,second.data.profile);
-      const forged=(await rpc('bootstrap_v1',{client_build:'r1-local-001',owner_user_id:'other'},cookie)).json();assert.equal(forged.error.code,'VALIDATION_FAILED');assert.equal(forged.error.path,'owner_user_id');
-      const body={client_build_id:'r1-local-001',level_id:'house-bridge-portal',content_version:'r1-map-1',request_id:crypto.randomUUID()};
+      const first=(await rpc('bootstrap_v1',{client_build:'r1-intro-001'},cookie)).json();assert.equal(first.ok,true);
+      const second=(await rpc('bootstrap_v1',{client_build:'r1-intro-001'},cookie)).json();assert.deepEqual(first.data.profile,second.data.profile);
+      const forged=(await rpc('bootstrap_v1',{client_build:'r1-intro-001',owner_user_id:'other'},cookie)).json();assert.equal(forged.error.code,'VALIDATION_FAILED');assert.equal(forged.error.path,'owner_user_id');
+      const body={client_build_id:'r1-intro-001',level_id:'house-bridge-portal-intro',content_version:'r1-map-2',request_id:crypto.randomUUID()};
       const start=(await rpc('run_start_v1',body,cookie)).json();assert.equal(start.ok,true);runId=start.data.run_id;
       const retry=(await rpc('run_start_v1',body,cookie)).json();assert.deepEqual(retry.data,start.data);
       assert.equal(Number((await pg.admin.query('SELECT count(*) AS n FROM syezzhaem.profile_identity_index WHERE user_id=$1',[owner])).rows[0].n),1);
@@ -79,7 +79,7 @@ test('Better Auth real PostgreSQL: verification, reset, persistent session and o
       const secondOwner=signin.json().user.id;
       assert.equal((await rpc('run_get_v1',{run_id:runId},c,secondOwner)).json().error.code,'NOT_FOUND');
       assert.equal((await rpc('run_abandon_v1',{run_id:runId,expected_revision:0,request_id:crypto.randomUUID()},c,secondOwner)).json().error.code,'NOT_FOUND');
-      const switched=await rpc('run_start_v1',{client_build_id:'r1-local-001',level_id:'house-bridge-portal',content_version:'r1-map-1',request_id:crypto.randomUUID()},c,owner);
+      const switched=await rpc('run_start_v1',{client_build_id:'r1-intro-001',level_id:'house-bridge-portal-intro',content_version:'r1-map-2',request_id:crypto.randomUUID()},c,owner);
       assert.equal(switched.statusCode,401);assert.equal(switched.json().code,'AUTH_CONTEXT_CHANGED');
       assert.equal(Number((await pg.admin.query('SELECT count(*) AS n FROM syezzhaem.active_run_index WHERE user_id=$1',[secondOwner])).rows[0].n),0);
     });
@@ -88,7 +88,7 @@ test('Better Auth real PostgreSQL: verification, reset, persistent session and o
       const url=link('one@example.test');const redirect=await app.inject({method:'GET',url:url.pathname+url.search});assert.equal(redirect.statusCode,302);
       const target=new URL(redirect.headers.location!);const token=target.searchParams.get('token');assert.ok(token);
       const changed=await authPost('reset-password',{token,newPassword:'New-synthetic-password-456!'});assert.equal(changed.statusCode,200);
-      assert.equal((await rpc('bootstrap_v1',{client_build:'r1-local-001'},cookie)).statusCode,401);
+      assert.equal((await rpc('bootstrap_v1',{client_build:'r1-intro-001'},cookie)).statusCode,401);
       const old=await authPost('sign-in/email',{email:'one@example.test',password});assert.equal(old.statusCode,401);
       const fresh=await authPost('sign-in/email',{email:'one@example.test',password:'New-synthetic-password-456!'});assert.equal(fresh.statusCode,200);
       const cookies=fresh.headers['set-cookie'];cookie=(Array.isArray(cookies)?cookies[0]:cookies)!.split(';')[0];

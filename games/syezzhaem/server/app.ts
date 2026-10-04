@@ -66,7 +66,7 @@ export async function createApp(options: AppOptions) {
   } });
   app.get('/api/syezzhaem/v1/version',async()=> ({
     api_build_id:options.apiBuildId ?? 'r1-api-001', process_id:process.pid, api_version:'v1', snapshot_schema_versions:[1],
-    supported_content_versions:['r1-map-1'], supported_rules_versions:['r1-rules-1'], active:await registry.active(),
+    supported_content_versions:['r1-map-1','r1-map-2'], supported_rules_versions:['r1-rules-1','r1-rules-2'], active:await registry.active(),
   }));
   const readiness = async (_request:unknown,reply:{code:(status:number)=>{send:(value:unknown)=>unknown}}) => {
     try { await registry.verify(); await options.auth.check(); await store.check(); return {ok:true,api_build_id:options.apiBuildId??'r1-api-001',checks:{auth:true,db:true,releases:true}}; }

@@ -1,6 +1,8 @@
 import { readFile, readdir, lstat } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
+import { compatibleContent } from '../src/contracts.ts';
+import {CURRENT_BUILD_CONTEXT} from '../src/snapshot-v1.ts';
 
 export interface ReleaseDescriptor {
   manifest_version:1; build_id:string; entry_url:string; api_version:'v1';
@@ -17,14 +19,14 @@ const baseKeys=['api_version','build_id','content_version','entry_url','level_id
 function keys(value:object,expected:string[]){if(Object.keys(value).sort().join()!==[...expected].sort().join())throw new Error('Invalid release manifest keys');}
 function safePath(name:string){if(!pathPattern.test(name)||name.startsWith('/')||name.split('/').some(x=>x===''||x==='.'||x==='..'))throw new Error('Unsafe release path');}
 function validateDescriptor(d:ReleaseDescriptor){
-  if(!buildPattern.test(d.build_id)||d.manifest_version!==1||d.api_version!=='v1'||d.snapshot_schema_version!==1||d.entry_url!==`/games/syezzhaem/releases/${d.build_id}/`||d.content_version!=='r1-map-1'||d.rules_version!=='r1-rules-1'||d.level_id!=='house-bridge-portal'||!/^[0-9a-f]{64}$/.test(d.manifest_sha256))throw new Error('Unsupported release descriptor');
+  if(!buildPattern.test(d.build_id)||d.manifest_version!==1||d.api_version!=='v1'||d.snapshot_schema_version!==1||d.entry_url!==`/games/syezzhaem/releases/${d.build_id}/`||!compatibleContent(d.content_version,d.rules_version)||d.level_id!==(d.content_version==='r1-map-2'?'house-bridge-portal-intro':'house-bridge-portal')||!/^[0-9a-f]{64}$/.test(d.manifest_sha256))throw new Error('Unsupported release descriptor');
 }
 export class ReleaseRegistry {
   constructor(readonly root?:string){}
   private development():ReleaseDescriptor {
-    const build_id=process.env.BUILD_ID??'r1-local-001';
+    const build_id=process.env.BUILD_ID??CURRENT_BUILD_CONTEXT.client_build_id;
     if(!buildPattern.test(build_id))throw new Error('Unsafe BUILD_ID');
-    return {manifest_version:1,build_id,entry_url:`/games/syezzhaem/releases/${build_id}/`,api_version:'v1',content_version:'r1-map-1',rules_version:'r1-rules-1',snapshot_schema_version:1,level_id:'house-bridge-portal',manifest_sha256:'0'.repeat(64)};
+    return {manifest_version:1,build_id,entry_url:`/games/syezzhaem/releases/${build_id}/`,api_version:'v1',content_version:CURRENT_BUILD_CONTEXT.content_version,rules_version:CURRENT_BUILD_CONTEXT.rules_version,snapshot_schema_version:1,level_id:CURRENT_BUILD_CONTEXT.level_id,manifest_sha256:'0'.repeat(64)};
   }
   async active():Promise<ReleaseDescriptor>{
     if(!this.root)return this.development();

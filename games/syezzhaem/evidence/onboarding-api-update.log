@@ -1,0 +1,14 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> syezzhaem-r1-back@1.0.0 test:api-update
+> node --import tsx --test tests/api-update.test.ts
+
+✔ AT-36 live API process cutover resolves lost checkpoint/finish ACK using shared PostgreSQL (4890.429326ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5255.021362

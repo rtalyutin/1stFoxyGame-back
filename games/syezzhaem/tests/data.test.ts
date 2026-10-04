@@ -6,7 +6,7 @@ import{startPostgresFixture}from'./data-pg-helper.mjs';
 import{createDatabase,type Database,type Sql}from'../server/database.ts';
 import{R1Store,type RunDTO}from'../server/r1-store.ts';
 import{seedR1Metadata}from'../server/r1-metadata.ts';
-import{BUILD_CONTEXT,toSnapshotV1,fromSnapshotV1,scoreSnapshot}from'../src/snapshot-v1.ts';
+import{BUILD_CONTEXT,CURRENT_BUILD_CONTEXT,toSnapshotV1,fromSnapshotV1,scoreSnapshot}from'../src/snapshot-v1.ts';
 import{step,take,place,targetAt}from'../src/core.ts';
 import{exportGame,restoreGame,rebuildProjections}from'../server/r1-recovery.ts';
 let fixture:any,db:Database,store:R1Store;
@@ -29,3 +29,31 @@ test('AT-22 server derives victory score from actual completed R1 route',async()
 test('profile CAS/idempotency and shared checkpoint rate limits survive API pool overlap',async()=>{const boot=await store.bootstrap('profile-rate'),body={expected_revision:boot.profile.revision,request_id:randomUUID(),settings:{display_name:'Игрок',sound_volume:.2}};const updated=await store.updateProfile('profile-rate',body);assert.deepEqual(await store.updateProfile('profile-rate',body),updated);await assert.rejects(store.updateProfile('profile-rate',{...body,request_id:randomUUID()}),{code:'REVISION_CONFLICT'});const run=await store.start('profile-rate',startBody());let r=run;for(let i=0;i<2;i++)r=await store.save('profile-rate',{run_id:r.run_id,expected_revision:r.revision,request_id:randomUUID(),snapshot:changed(r)});await assert.rejects(store.save('profile-rate',{run_id:r.run_id,expected_revision:r.revision,request_id:randomUUID(),snapshot:changed(r)}),{code:'RATE_LIMITED'})});
 test('AT-16 movement in flight and AT-26 replacement identity survive typed EAV reload',async()=>{const run=await store.start('snapshot-identities',startBody()),state=fromSnapshotV1(run.checkpoint);step(state,{left:false,right:false,jump:true});assert.ok(state.player.vy>0);assert.equal(state.player.support,null);const airborne=toSnapshotV1(state,run.checkpoint);const saved=await store.save('snapshot-identities',{run_id:run.run_id,expected_revision:0,request_id:randomUUID(),snapshot:airborne});assert.deepEqual(saved.checkpoint,airborne);const replacement=fromSnapshotV1(run.checkpoint),newId=`placed:${randomUUID()}`;const original=replacement.blocks.find(b=>b.space==='house'&&b.x===4&&b.y===0)!;replacement.blocks=replacement.blocks.filter(b=>b.id!==original.id);replacement.blocks.push({...original,id:newId,originalId:null});replacement.player.support={space:'house',x:4,y:0,blockId:newId};replacement.tick=saved.checkpoint.sim_tick;replacement.nextBlockId++;const encoded=toSnapshotV1(replacement,run.checkpoint),again=await store.save('snapshot-identities',{run_id:run.run_id,expected_revision:saved.revision,request_id:randomUUID(),snapshot:encoded});assert.deepEqual((await store.get('snapshot-identities',run.run_id)).checkpoint,encoded);assert.equal(again.checkpoint.player.support!.block_id,newId);assert.equal(again.checkpoint.house_cells[0].base_block_id,original.id);assert.equal(scoreSnapshot(encoded).retained_fraction,25/26)});
 test('AT-24 EAV export restored in a separate database recreates private saves and projections',async()=>{const before=await store.get('checkpoint-retry',(await store.bootstrap('checkpoint-retry')).active_run!.run_id);await transaction(fixture.admin,rebuildProjections);assert.deepEqual(await store.get('checkpoint-retry',before.run_id),before);const backup=await transaction(fixture.admin,exportGame);const second=await startPostgresFixture();let secondDb:Database|undefined;try{await transaction(second.admin,tx=>restoreGame(tx,backup as Awaited<ReturnType<typeof exportGame>>));secondDb=await createDatabase({databaseUrl:second.runtimeUrl});const restored=new R1Store(secondDb);assert.deepEqual(await restored.get('checkpoint-retry',before.run_id),before);assert.equal((await restored.bootstrap('checkpoint-retry')).active_run!.run_id,before.run_id);assert.equal((await restored.history('finish-retry',{})).items.length,1)}finally{await secondDb?.close();await second.close()}});
+
+// Onboarding uses new immutable EAV objects; old runs retain their own blueprint and rules.
+test('intro seed adds a versioned timer parameter idempotently without rewriting old runs or immutable assets',async()=>{
+ // Reconstruct a populated pre-intro catalog in this disposable DB only.
+ await transaction(fixture.admin,async tx=>{
+  for(const id of ['c4b902a6-1532-4212-8b21-000000000016','c4b902a6-1532-4212-8b21-000000000011','c4b902a6-1532-4212-8b21-000000000012','c4b902a6-1532-4212-8b21-000000000015'])await tx.query('DELETE FROM syezzhaem.entities WHERE id=$1',[id]);
+  await tx.query("DELETE FROM syezzhaem.entity_parameters WHERE id='house_state.support_loss_ticks_v2'");
+ });
+ const legacy={...BUILD_CONTEXT,client_build_id:'r1-local-001'};
+ const old=await store.start('intro-old',{client_build_id:legacy.client_build_id,content_version:legacy.content_version,level_id:legacy.level_id,request_id:randomUUID()},legacy);
+ const valuesBefore=(await fixture.admin.query("SELECT v.* FROM syezzhaem.entity_parameter_values v JOIN syezzhaem.entities e ON e.id=v.entity_id WHERE e.owner_user_id IS NULL AND e.id::text NOT IN ('c4b902a6-1532-4212-8b21-000000000011','c4b902a6-1532-4212-8b21-000000000012','c4b902a6-1532-4212-8b21-000000000015','c4b902a6-1532-4212-8b21-000000000016') ORDER BY v.entity_id,v.parameter_id")).rows;
+ await transaction(fixture.admin,seedR1Metadata);await transaction(fixture.admin,seedR1Metadata);
+ assert.equal(Number((await fixture.admin.query("SELECT max_number FROM syezzhaem.entity_parameters WHERE id='house_state.support_loss_ticks'")).rows[0].max_number),90);
+ assert.equal(Number((await fixture.admin.query("SELECT max_number FROM syezzhaem.entity_parameters WHERE id='house_state.support_loss_ticks_v2'")).rows[0].max_number),240);
+ const valuesAfter=(await fixture.admin.query("SELECT v.* FROM syezzhaem.entity_parameter_values v JOIN syezzhaem.entities e ON e.id=v.entity_id WHERE e.owner_user_id IS NULL AND e.id::text NOT IN ('c4b902a6-1532-4212-8b21-000000000011','c4b902a6-1532-4212-8b21-000000000012','c4b902a6-1532-4212-8b21-000000000015','c4b902a6-1532-4212-8b21-000000000016') ORDER BY v.entity_id,v.parameter_id")).rows;
+ assert.deepEqual(valuesAfter,valuesBefore);assert.deepEqual(await store.get('intro-old',old.run_id),old);
+ const intro=CURRENT_BUILD_CONTEXT;
+ const run=await store.start('intro-new',{client_build_id:intro.client_build_id,content_version:intro.content_version,level_id:intro.level_id,request_id:randomUUID()},intro);
+ assert.equal(run.checkpoint.house.support_loss_ticks,240);assert.equal(run.checkpoint.level_id,intro.level_id);
+ assert.deepEqual(run.checkpoint.house_cells,[]);
+ const state=fromSnapshotV1(run.checkpoint);assert.equal(take(state,targetAt(state,'house',7,1)).ok,true);
+ const dto=toSnapshotV1(state,run.checkpoint),body={run_id:run.run_id,expected_revision:0,request_id:randomUUID(),snapshot:dto};
+ const saved=await store.save('intro-new',body);assert.deepEqual(await store.save('intro-new',body),saved);
+ assert.deepEqual((await store.get('intro-new',run.run_id)).checkpoint,dto);
+ assert.deepEqual(await store.get('intro-old',old.run_id),old);
+ const mixed={...dto,rules_version:'r1-rules-1'};
+ await assert.rejects(store.save('intro-new',{...body,request_id:randomUUID(),expected_revision:1,snapshot:mixed}),{code:'CONTENT_INCOMPATIBLE'});
+});
