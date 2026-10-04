@@ -1,0 +1,15 @@
+{
+  "old_build_id": "r1-api-001",
+  "new_build_id": "r1-api-002",
+  "old_port": 8091,
+  "new_port": 8092,
+  "old_pid": 12345,
+  "upstream_file": "/etc/nginx/syezzhaem/upstream.conf",
+  "working_directory": "/srv/foxygames/syezzhaem/api/r1-api-002",
+  "new_command": ["node", "--import", "tsx", "server/index.ts"],
+  "migration_command": ["node", "--import", "tsx", "server/migrate.ts"],
+  "game_smoke_command": ["node", "--import", "tsx", "scripts/api-smoke.mjs"],
+  "nginx_test_command": ["nginx", "-t"],
+  "nginx_reload_command": ["nginx", "-s", "reload"],
+  "drain_timeout_seconds": 60
+}

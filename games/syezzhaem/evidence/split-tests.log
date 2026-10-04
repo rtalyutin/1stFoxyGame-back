@@ -1,0 +1,76 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> syezzhaem-r1-back@1.0.0 test
+> node --import tsx --test tests/core.test.ts tests/snapshot-v1.test.ts tests/data.test.ts tests/auth.test.ts tests/security-db.test.ts tests/security-http.test.ts tests/security-role.test.ts tests/security-publisher.test.ts tests/release.test.ts
+
+▶ Better Auth real PostgreSQL: verification, reset, persistent session and owner API
+  ✔ unverified signup cannot create an authenticated game profile (342.675215ms)
+  ✔ confirmation uses library token and cookie is HttpOnly with game prefix/path (149.796673ms)
+  ✔ legitimate repeated account checks exceed the old global 100/min budget (593.717742ms)
+  ✔ bootstrap is idempotent; server chooses owner; successful start retries same run (111.360741ms)
+  ✔ another API process configuration accepts the persistent signed session (32.384828ms)
+  ✔ second account cannot read or abandon a foreign run (179.902534ms)
+  ✔ password recovery consumes library token and revokes earlier sessions (346.921493ms)
+  ✔ readiness checks actual Auth/DB; authenticated loopback drain preserves accepted work (49.451316ms)
+✔ Better Auth real PostgreSQL: verification, reset, persistent session and owner API (3034.682901ms)
+✔ initial snapshot round-trips and original blocks have stable unique identity (8.07346ms)
+✔ AT-01: a moving house block is transferred once and placed bridge stays in world space (33.42607ms)
+✔ AT-02: full inventory and invalid placement preserve all state (2.044161ms)
+✔ AT-03 partial: house stops before unsupported gap then whole R1 route is playable (61.37699ms)
+✔ AT-04 partial: removed chassis support has a recoverable countdown, distinct from floor removal (18.768549ms)
+✔ AT-16 movement partial: airborne velocity, platform carry and support countdown restore exactly (51.738966ms)
+✔ AT-26: repairing same floor cell preserves new ID and support, never original score (1.550066ms)
+✔ AT-28: bound target follows house-local cell and safely fails after deletion/replacement (1.371344ms)
+✔ snapshot validation rejects type, identity, reference, cell and conservation violations atomically (7.893536ms)
+✔ G-09: interaction ray cannot pass through the supporting floor (0.855945ms)
+✔ G-07/AT-02: placement cannot enter chassis, but removed house floor can be repaired (7.476521ms)
+✔ G-03: fixed obstacle blocks moving house, including a floating block above chassis (21.201599ms)
+✔ valid flight off the fixed map still saves and restores terminal position (3.5645ms)
+✔ fixed tick does not simulate wall-clock suspension and terminal outcome stays fixed (0.638926ms)
+✔ AT-15 concurrent starts share one active slot across independent pools (948.265256ms)
+✔ AT-30 failed start does not reserve request, successful start retry precedes active build checks (235.584168ms)
+✔ AT-11 successful checkpoint dropped ACK retry preserves original DTO and revision (115.167504ms)
+✔ AT-13 two pools CAS accept one immutable snapshot and never merge states (84.833281ms)
+✔ AT-12 invalid last override rolls back snapshot, revision and request key (109.505949ms)
+✔ AT-17 SQL type, required, reference and multiplicity constraints reject invalid aggregates (65.522663ms)
+✔ AT-18 optional metadata parameter requires no domain column and preserves existing saves (71.971682ms)
+✔ AT-19 content and pinned build mismatch preserve stored checkpoint (75.84938ms)
+✔ AT-22 final loss retry creates one history entry and frees active slot (144.285419ms)
+✔ AT-22 server derives victory score from actual completed R1 route (304.853124ms)
+✔ profile CAS/idempotency and shared checkpoint rate limits survive API pool overlap (226.032535ms)
+✔ AT-16 movement in flight and AT-26 replacement identity survive typed EAV reload (136.015604ms)
+✔ AT-24 EAV export restored in a separate database recreates private saves and projections (1009.582115ms)
+✔ immutable publication, process crash recovery, concurrency, retention, API cutover and drain fixtures (5900.254013ms)
+✔ shared release registry pins retained builds and refuses incomplete/corrupted release (14.844711ms)
+✔ release registry rejects extra files, symlinks and pointer digest mismatch (4.655809ms)
+✔ SEC-02 cross-account API Store reads and mutations are denied without changing owner data (1038.62427ms)
+✔ SEC-02 direct runtime RLS filters every private row from another owner (3.447338ms)
+✔ SEC-02 runtime owner context is cleared after commit and rollback (15.911841ms)
+✔ SEC-02 cross-owner parent and typed checkpoint references are rejected by SQL (12.596689ms)
+✔ SEC-03 aggregate key projections reject cross-owner entity links (3.866408ms)
+✔ SEC-03 active-run projection cannot point to another owner after their slot clears (73.150766ms)
+✔ SEC-03 profile identity projection cannot point to an unindexed profile of another owner (5.747406ms)
+✔ SEC-04 HTTPS configuration issues private host-only Secure session cookie with game path (1692.351662ms)
+✔ SEC-04 auth and game mutations reject foreign and null browser origins before effect (4.606758ms)
+✔ SEC-04 untrusted callback and password-reset redirect cannot receive auth links (13.153001ms)
+✔ SEC-04 altered signed session cannot access authenticated game RPC (2.176779ms)
+✔ SEC-04 game request body cannot choose another authenticated owner (7.356835ms)
+✔ SEC-05 expected-owner binding rejects cookie-account race before run creation (117.817592ms)
+✔ SEC-06 immutable publisher rejects zip traversal, duplicate names and symlink entries before writing (122.779631ms)
+✔ SEC-01 game runtime rejects inherited table-owner privileges (2128.189523ms)
+✔ SEC-01 auth runtime rejects inherited table-owner privileges before mail/library startup (1525.910698ms)
+✔ SEC-01 game runtime accepts least-privilege role and RLS denies unrelated rows (1333.095543ms)
+✔ SEC-01 game runtime rejects membership allowing SET ROLE into unrelated BYPASSRLS role (1269.634823ms)
+✔ initial transport has no overrides, immutable content reconstructed and input cleared (9.535217ms)
+✔ removed wall persists as tombstone; rebuilt cell gets UUID without original identity (4.121767ms)
+✔ flight preserves velocities and support-loss ticks; restored simulation stays deterministic (10.132703ms)
+✔ reject malformed overrides, unsupported features, minted material and wrong pinned build (4.90937ms)
+✔ terminal score is derived from surviving original IDs and ticks; loss score zero (2.837198ms)
+ℹ tests 62
+ℹ suites 0
+ℹ pass 62
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7620.571286

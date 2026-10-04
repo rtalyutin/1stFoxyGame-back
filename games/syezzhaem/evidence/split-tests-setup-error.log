@@ -1,0 +1,285 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> syezzhaem-r1-back@1.0.0 test
+> node --import tsx --test tests/core.test.ts tests/snapshot-v1.test.ts tests/data.test.ts tests/auth.test.ts tests/security-db.test.ts tests/security-http.test.ts tests/security-role.test.ts tests/security-publisher.test.ts tests/release.test.ts
+
+✖ Better Auth real PostgreSQL: verification, reset, persistent session and owner API (65.954834ms)
+✔ initial snapshot round-trips and original blocks have stable unique identity (11.308084ms)
+✔ AT-01: a moving house block is transferred once and placed bridge stays in world space (46.687794ms)
+✔ AT-02: full inventory and invalid placement preserve all state (4.341938ms)
+✔ AT-03 partial: house stops before unsupported gap then whole R1 route is playable (87.61664ms)
+✔ AT-04 partial: removed chassis support has a recoverable countdown, distinct from floor removal (24.556819ms)
+✔ AT-16 movement partial: airborne velocity, platform carry and support countdown restore exactly (65.717687ms)
+✔ AT-26: repairing same floor cell preserves new ID and support, never original score (1.240504ms)
+✔ AT-28: bound target follows house-local cell and safely fails after deletion/replacement (3.894562ms)
+✔ snapshot validation rejects type, identity, reference, cell and conservation violations atomically (19.255526ms)
+✔ G-09: interaction ray cannot pass through the supporting floor (2.0186ms)
+✔ G-07/AT-02: placement cannot enter chassis, but removed house floor can be repaired (2.57149ms)
+✔ G-03: fixed obstacle blocks moving house, including a floating block above chassis (50.190846ms)
+✔ valid flight off the fixed map still saves and restores terminal position (9.103743ms)
+✔ fixed tick does not simulate wall-clock suspension and terminal outcome stays fixed (1.682467ms)
+✖ AT-15 concurrent starts share one active slot across independent pools (34.763071ms)
+✖ AT-30 failed start does not reserve request, successful start retry precedes active build checks (1.380169ms)
+✖ AT-11 successful checkpoint dropped ACK retry preserves original DTO and revision (0.230279ms)
+✖ AT-13 two pools CAS accept one immutable snapshot and never merge states (0.066602ms)
+✖ AT-12 invalid last override rolls back snapshot, revision and request key (0.070094ms)
+✖ AT-17 SQL type, required, reference and multiplicity constraints reject invalid aggregates (0.056147ms)
+✖ AT-18 optional metadata parameter requires no domain column and preserves existing saves (0.12431ms)
+✖ AT-19 content and pinned build mismatch preserve stored checkpoint (0.073015ms)
+✖ AT-22 final loss retry creates one history entry and frees active slot (0.106911ms)
+✖ AT-22 server derives victory score from actual completed R1 route (0.077704ms)
+✖ profile CAS/idempotency and shared checkpoint rate limits survive API pool overlap (0.036974ms)
+✖ AT-16 movement in flight and AT-26 replacement identity survive typed EAV reload (0.113097ms)
+✖ AT-24 EAV export restored in a separate database recreates private saves and projections (0.040254ms)
+✔ immutable publication, process crash recovery, concurrency, retention, API cutover and drain fixtures (5841.737224ms)
+✔ shared release registry pins retained builds and refuses incomplete/corrupted release (30.816132ms)
+✔ release registry rejects extra files, symlinks and pointer digest mismatch (5.753087ms)
+✖ SEC-02 cross-account API Store reads and mutations are denied without changing owner data (37.38796ms)
+✖ SEC-02 direct runtime RLS filters every private row from another owner (1.882605ms)
+✖ SEC-02 runtime owner context is cleared after commit and rollback (0.203252ms)
+✖ SEC-02 cross-owner parent and typed checkpoint references are rejected by SQL (0.070845ms)
+✖ SEC-03 aggregate key projections reject cross-owner entity links (0.102299ms)
+✖ SEC-03 active-run projection cannot point to another owner after their slot clears (0.074762ms)
+✖ SEC-03 profile identity projection cannot point to an unindexed profile of another owner (0.091787ms)
+✖ SEC-04 HTTPS configuration issues private host-only Secure session cookie with game path (27.750272ms)
+✖ SEC-04 auth and game mutations reject foreign and null browser origins before effect (1.02584ms)
+✖ SEC-04 untrusted callback and password-reset redirect cannot receive auth links (0.153964ms)
+✖ SEC-04 altered signed session cannot access authenticated game RPC (0.120097ms)
+✖ SEC-04 game request body cannot choose another authenticated owner (0.065369ms)
+✖ SEC-05 expected-owner binding rejects cookie-account race before run creation (0.067169ms)
+✔ SEC-06 immutable publisher rejects zip traversal, duplicate names and symlink entries before writing (98.445806ms)
+✔ SEC-01 game runtime rejects inherited table-owner privileges (1890.347796ms)
+✔ SEC-01 auth runtime rejects inherited table-owner privileges before mail/library startup (1327.698347ms)
+✔ SEC-01 game runtime accepts least-privilege role and RLS denies unrelated rows (1268.835658ms)
+✔ SEC-01 game runtime rejects membership allowing SET ROLE into unrelated BYPASSRLS role (1230.386105ms)
+✔ initial transport has no overrides, immutable content reconstructed and input cleared (6.521537ms)
+✔ removed wall persists as tombstone; rebuilt cell gets UUID without original identity (9.20898ms)
+✔ flight preserves velocities and support-loss ticks; restored simulation stays deterministic (13.718242ms)
+✔ reject malformed overrides, unsupported features, minted material and wrong pinned build (4.685761ms)
+✔ terminal score is derived from surviving original IDs and ticks; loss score zero (2.334608ms)
+ℹ tests 54
+ℹ suites 0
+ℹ pass 27
+ℹ fail 27
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7622.32475
+
+✖ failing tests:
+
+test at tests/auth.test.ts:1:472
+✖ Better Auth real PostgreSQL: verification, reset, persistent session and owner API (65.954834ms)
+  Error: PostgreSQL command failed 127: /workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/node_modules/@embedded-postgres/linux-x64/native/bin/initdb: error while loading shared libraries: libpq.so.5: cannot open shared object file: No such file or directory
+  
+      at ChildProcess.<anonymous> (file:///workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/tests/data-pg-helper.mjs:10:248)
+      at ChildProcess.emit (node:events:509:28)
+      at ChildProcess._handle.onexit (node:internal/child_process:295:12)
+
+test at tests/data.test.ts:1:1702
+✖ AT-15 concurrent starts share one active slot across independent pools (34.763071ms)
+  Error: PostgreSQL command failed 127: /workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/node_modules/@embedded-postgres/linux-x64/native/bin/initdb: error while loading shared libraries: libpq.so.5: cannot open shared object file: No such file or directory
+  
+      at ChildProcess.<anonymous> (file:///workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/tests/data-pg-helper.mjs:10:248)
+      at ChildProcess.emit (node:events:509:28)
+      at ChildProcess._handle.onexit (node:internal/child_process:295:12)
+
+test at tests/data.test.ts:1:2194
+✖ AT-30 failed start does not reserve request, successful start retry precedes active build checks (1.380169ms)
+  Error: PostgreSQL command failed 127: /workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/node_modules/@embedded-postgres/linux-x64/native/bin/initdb: error while loading shared libraries: libpq.so.5: cannot open shared object file: No such file or directory
+  
+      at ChildProcess.<anonymous> (file:///workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/tests/data-pg-helper.mjs:10:248)
+      at ChildProcess.emit (node:events:509:28)
+      at ChildProcess._handle.onexit (node:internal/child_process:295:12)
+
+test at tests/data.test.ts:1:2854
+✖ AT-11 successful checkpoint dropped ACK retry preserves original DTO and revision (0.230279ms)
+  Error: PostgreSQL command failed 127: /workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/node_modules/@embedded-postgres/linux-x64/native/bin/initdb: error while loading shared libraries: libpq.so.5: cannot open shared object file: No such file or directory
+  
+      at ChildProcess.<anonymous> (file:///workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/tests/data-pg-helper.mjs:10:248)
+      at ChildProcess.emit (node:events:509:28)
+      at ChildProcess._handle.onexit (node:internal/child_process:295:12)
+
+test at tests/data.test.ts:1:3413
+✖ AT-13 two pools CAS accept one immutable snapshot and never merge states (0.066602ms)
+  Error: PostgreSQL command failed 127: /workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/node_modules/@embedded-postgres/linux-x64/native/bin/initdb: error while loading shared libraries: libpq.so.5: cannot open shared object file: No such file or directory
+  
+      at ChildProcess.<anonymous> (file:///workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/tests/data-pg-helper.mjs:10:248)
+      at ChildProcess.emit (node:events:509:28)
+      at ChildProcess._handle.onexit (node:internal/child_process:295:12)
+
+test at tests/data.test.ts:1:4154
+✖ AT-12 invalid last override rolls back snapshot, revision and request key (0.070094ms)
+  Error: PostgreSQL command failed 127: /workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/node_modules/@embedded-postgres/linux-x64/native/bin/initdb: error while loading shared libraries: libpq.so.5: cannot open shared object file: No such file or directory
+  
+      at ChildProcess.<anonymous> (file:///workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/tests/data-pg-helper.mjs:10:248)
+      at ChildProcess.emit (node:events:509:28)
+      at ChildProcess._handle.onexit (node:internal/child_process:295:12)
+
+test at tests/data.test.ts:1:4851
+✖ AT-17 SQL type, required, reference and multiplicity constraints reject invalid aggregates (0.056147ms)
+  Error: PostgreSQL command failed 127: /workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/node_modules/@embedded-postgres/linux-x64/native/bin/initdb: error while loading shared libraries: libpq.so.5: cannot open shared object file: No such file or directory
+  
+      at ChildProcess.<anonymous> (file:///workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/tests/data-pg-helper.mjs:10:248)
+      at ChildProcess.emit (node:events:509:28)
+      at ChildProcess._handle.onexit (node:internal/child_process:295:12)
+
+test at tests/data.test.ts:1:6009
+✖ AT-18 optional metadata parameter requires no domain column and preserves existing saves (0.12431ms)
+  Error: PostgreSQL command failed 127: /workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/node_modules/@embedded-postgres/linux-x64/native/bin/initdb: error while loading shared libraries: libpq.so.5: cannot open shared object file: No such file or directory
+  
+      at ChildProcess.<anonymous> (file:///workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/tests/data-pg-helper.mjs:10:248)
+      at ChildProcess.emit (node:events:509:28)
+      at ChildProcess._handle.onexit (node:internal/child_process:295:12)
+
+test at tests/data.test.ts:1:6631
+✖ AT-19 content and pinned build mismatch preserve stored checkpoint (0.073015ms)
+  Error: PostgreSQL command failed 127: /workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/node_modules/@embedded-postgres/linux-x64/native/bin/initdb: error while loading shared libraries: libpq.so.5: cannot open shared object file: No such file or directory
+  
+      at ChildProcess.<anonymous> (file:///workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/tests/data-pg-helper.mjs:10:248)
+      at ChildProcess.emit (node:events:509:28)
+      at ChildProcess._handle.onexit (node:internal/child_process:295:12)
+
+test at tests/data.test.ts:1:7224
+✖ AT-22 final loss retry creates one history entry and frees active slot (0.106911ms)
+  Error: PostgreSQL command failed 127: /workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/node_modules/@embedded-postgres/linux-x64/native/bin/initdb: error while loading shared libraries: libpq.so.5: cannot open shared object file: No such file or directory
+  
+      at ChildProcess.<anonymous> (file:///workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/tests/data-pg-helper.mjs:10:248)
+      at ChildProcess.emit (node:events:509:28)
+      at ChildProcess._handle.onexit (node:internal/child_process:295:12)
+
+test at tests/data.test.ts:1:8047
+✖ AT-22 server derives victory score from actual completed R1 route (0.077704ms)
+  Error: PostgreSQL command failed 127: /workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/node_modules/@embedded-postgres/linux-x64/native/bin/initdb: error while loading shared libraries: libpq.so.5: cannot open shared object file: No such file or directory
+  
+      at ChildProcess.<anonymous> (file:///workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/tests/data-pg-helper.mjs:10:248)
+      at ChildProcess.emit (node:events:509:28)
+      at ChildProcess._handle.onexit (node:internal/child_process:295:12)
+
+test at tests/data.test.ts:1:9112
+✖ profile CAS/idempotency and shared checkpoint rate limits survive API pool overlap (0.036974ms)
+  Error: PostgreSQL command failed 127: /workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/node_modules/@embedded-postgres/linux-x64/native/bin/initdb: error while loading shared libraries: libpq.so.5: cannot open shared object file: No such file or directory
+  
+      at ChildProcess.<anonymous> (file:///workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/tests/data-pg-helper.mjs:10:248)
+      at ChildProcess.emit (node:events:509:28)
+      at ChildProcess._handle.onexit (node:internal/child_process:295:12)
+
+test at tests/data.test.ts:1:10034
+✖ AT-16 movement in flight and AT-26 replacement identity survive typed EAV reload (0.113097ms)
+  Error: PostgreSQL command failed 127: /workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/node_modules/@embedded-postgres/linux-x64/native/bin/initdb: error while loading shared libraries: libpq.so.5: cannot open shared object file: No such file or directory
+  
+      at ChildProcess.<anonymous> (file:///workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/tests/data-pg-helper.mjs:10:248)
+      at ChildProcess.emit (node:events:509:28)
+      at ChildProcess._handle.onexit (node:internal/child_process:295:12)
+
+test at tests/data.test.ts:1:11481
+✖ AT-24 EAV export restored in a separate database recreates private saves and projections (0.040254ms)
+  Error: PostgreSQL command failed 127: /workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/node_modules/@embedded-postgres/linux-x64/native/bin/initdb: error while loading shared libraries: libpq.so.5: cannot open shared object file: No such file or directory
+  
+      at ChildProcess.<anonymous> (file:///workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/tests/data-pg-helper.mjs:10:248)
+      at ChildProcess.emit (node:events:509:28)
+      at ChildProcess._handle.onexit (node:internal/child_process:295:12)
+
+test at tests/security-db.test.ts:1:1333
+✖ SEC-02 cross-account API Store reads and mutations are denied without changing owner data (37.38796ms)
+  Error: PostgreSQL command failed 127: /workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/node_modules/@embedded-postgres/linux-x64/native/bin/initdb: error while loading shared libraries: libpq.so.5: cannot open shared object file: No such file or directory
+  
+      at ChildProcess.<anonymous> (file:///workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/tests/data-pg-helper.mjs:10:248)
+      at ChildProcess.emit (node:events:509:28)
+      at ChildProcess._handle.onexit (node:internal/child_process:295:12)
+
+test at tests/security-db.test.ts:1:1874
+✖ SEC-02 direct runtime RLS filters every private row from another owner (1.882605ms)
+  Error: PostgreSQL command failed 127: /workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/node_modules/@embedded-postgres/linux-x64/native/bin/initdb: error while loading shared libraries: libpq.so.5: cannot open shared object file: No such file or directory
+  
+      at ChildProcess.<anonymous> (file:///workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/tests/data-pg-helper.mjs:10:248)
+      at ChildProcess.emit (node:events:509:28)
+      at ChildProcess._handle.onexit (node:internal/child_process:295:12)
+
+test at tests/security-db.test.ts:1:2489
+✖ SEC-02 runtime owner context is cleared after commit and rollback (0.203252ms)
+  Error: PostgreSQL command failed 127: /workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/node_modules/@embedded-postgres/linux-x64/native/bin/initdb: error while loading shared libraries: libpq.so.5: cannot open shared object file: No such file or directory
+  
+      at ChildProcess.<anonymous> (file:///workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/tests/data-pg-helper.mjs:10:248)
+      at ChildProcess.emit (node:events:509:28)
+      at ChildProcess._handle.onexit (node:internal/child_process:295:12)
+
+test at tests/security-db.test.ts:1:3108
+✖ SEC-02 cross-owner parent and typed checkpoint references are rejected by SQL (0.070845ms)
+  Error: PostgreSQL command failed 127: /workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/node_modules/@embedded-postgres/linux-x64/native/bin/initdb: error while loading shared libraries: libpq.so.5: cannot open shared object file: No such file or directory
+  
+      at ChildProcess.<anonymous> (file:///workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/tests/data-pg-helper.mjs:10:248)
+      at ChildProcess.emit (node:events:509:28)
+      at ChildProcess._handle.onexit (node:internal/child_process:295:12)
+
+test at tests/security-db.test.ts:1:4144
+✖ SEC-03 aggregate key projections reject cross-owner entity links (0.102299ms)
+  Error: PostgreSQL command failed 127: /workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/node_modules/@embedded-postgres/linux-x64/native/bin/initdb: error while loading shared libraries: libpq.so.5: cannot open shared object file: No such file or directory
+  
+      at ChildProcess.<anonymous> (file:///workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/tests/data-pg-helper.mjs:10:248)
+      at ChildProcess.emit (node:events:509:28)
+      at ChildProcess._handle.onexit (node:internal/child_process:295:12)
+
+test at tests/security-db.test.ts:1:4806
+✖ SEC-03 active-run projection cannot point to another owner after their slot clears (0.074762ms)
+  Error: PostgreSQL command failed 127: /workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/node_modules/@embedded-postgres/linux-x64/native/bin/initdb: error while loading shared libraries: libpq.so.5: cannot open shared object file: No such file or directory
+  
+      at ChildProcess.<anonymous> (file:///workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/tests/data-pg-helper.mjs:10:248)
+      at ChildProcess.emit (node:events:509:28)
+      at ChildProcess._handle.onexit (node:internal/child_process:295:12)
+
+test at tests/security-db.test.ts:1:5286
+✖ SEC-03 profile identity projection cannot point to an unindexed profile of another owner (0.091787ms)
+  Error: PostgreSQL command failed 127: /workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/node_modules/@embedded-postgres/linux-x64/native/bin/initdb: error while loading shared libraries: libpq.so.5: cannot open shared object file: No such file or directory
+  
+      at ChildProcess.<anonymous> (file:///workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/tests/data-pg-helper.mjs:10:248)
+      at ChildProcess.emit (node:events:509:28)
+      at ChildProcess._handle.onexit (node:internal/child_process:295:12)
+
+test at tests/security-http.test.ts:1:2776
+✖ SEC-04 HTTPS configuration issues private host-only Secure session cookie with game path (27.750272ms)
+  Error: PostgreSQL command failed 127: /workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/node_modules/@embedded-postgres/linux-x64/native/bin/initdb: error while loading shared libraries: libpq.so.5: cannot open shared object file: No such file or directory
+  
+      at ChildProcess.<anonymous> (file:///workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/tests/data-pg-helper.mjs:10:248)
+      at ChildProcess.emit (node:events:509:28)
+      at ChildProcess._handle.onexit (node:internal/child_process:295:12)
+
+test at tests/security-http.test.ts:1:3239
+✖ SEC-04 auth and game mutations reject foreign and null browser origins before effect (1.02584ms)
+  Error: PostgreSQL command failed 127: /workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/node_modules/@embedded-postgres/linux-x64/native/bin/initdb: error while loading shared libraries: libpq.so.5: cannot open shared object file: No such file or directory
+  
+      at ChildProcess.<anonymous> (file:///workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/tests/data-pg-helper.mjs:10:248)
+      at ChildProcess.emit (node:events:509:28)
+      at ChildProcess._handle.onexit (node:internal/child_process:295:12)
+
+test at tests/security-http.test.ts:1:4303
+✖ SEC-04 untrusted callback and password-reset redirect cannot receive auth links (0.153964ms)
+  Error: PostgreSQL command failed 127: /workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/node_modules/@embedded-postgres/linux-x64/native/bin/initdb: error while loading shared libraries: libpq.so.5: cannot open shared object file: No such file or directory
+  
+      at ChildProcess.<anonymous> (file:///workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/tests/data-pg-helper.mjs:10:248)
+      at ChildProcess.emit (node:events:509:28)
+      at ChildProcess._handle.onexit (node:internal/child_process:295:12)
+
+test at tests/security-http.test.ts:1:4891
+✖ SEC-04 altered signed session cannot access authenticated game RPC (0.120097ms)
+  Error: PostgreSQL command failed 127: /workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/node_modules/@embedded-postgres/linux-x64/native/bin/initdb: error while loading shared libraries: libpq.so.5: cannot open shared object file: No such file or directory
+  
+      at ChildProcess.<anonymous> (file:///workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/tests/data-pg-helper.mjs:10:248)
+      at ChildProcess.emit (node:events:509:28)
+      at ChildProcess._handle.onexit (node:internal/child_process:295:12)
+
+test at tests/security-http.test.ts:1:5203
+✖ SEC-04 game request body cannot choose another authenticated owner (0.065369ms)
+  Error: PostgreSQL command failed 127: /workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/node_modules/@embedded-postgres/linux-x64/native/bin/initdb: error while loading shared libraries: libpq.so.5: cannot open shared object file: No such file or directory
+  
+      at ChildProcess.<anonymous> (file:///workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/tests/data-pg-helper.mjs:10:248)
+      at ChildProcess.emit (node:events:509:28)
+      at ChildProcess._handle.onexit (node:internal/child_process:295:12)
+
+test at tests/security-http.test.ts:1:5551
+✖ SEC-05 expected-owner binding rejects cookie-account race before run creation (0.067169ms)
+  Error: PostgreSQL command failed 127: /workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/node_modules/@embedded-postgres/linux-x64/native/bin/initdb: error while loading shared libraries: libpq.so.5: cannot open shared object file: No such file or directory
+  
+      at ChildProcess.<anonymous> (file:///workspace/scratch/102b8cada1c3/publish-r1/back/games/syezzhaem/tests/data-pg-helper.mjs:10:248)
+      at ChildProcess.emit (node:events:509:28)
+      at ChildProcess._handle.onexit (node:internal/child_process:295:12)

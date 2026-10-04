@@ -1,0 +1,31 @@
+{
+  "name": "syezzhaem-r1-back",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "tsc --noEmit",
+    "test": "node --import tsx --test tests/core.test.ts tests/snapshot-v1.test.ts tests/data.test.ts tests/auth.test.ts tests/security-db.test.ts tests/security-http.test.ts tests/security-role.test.ts tests/security-publisher.test.ts tests/release.test.ts",
+    "test:api-update": "node --import tsx --test tests/api-update.test.ts",
+    "start": "node --import tsx server/index.ts",
+    "migrate": "node --import tsx server/migrate.ts"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "0.5.8",
+    "better-auth": "1.7.7",
+    "fastify": "5.12.5",
+    "nodemailer": "10.0.14",
+    "pg": "8.23.1"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.4",
+    "@types/nodemailer": "8.0.2",
+    "@types/pg": "8.23.1",
+    "embedded-postgres": "18.4.0-beta.17",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2"
+  },
+  "engines": {
+    "node": ">=24 <25"
+  }
+}
