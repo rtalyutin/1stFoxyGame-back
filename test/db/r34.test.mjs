@@ -1,0 +1,34 @@
+import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
+import {test} from 'node:test';
+import {Client,Pool} from 'pg';
+import {buildApp} from '../../dist/app.js';
+import {migrate} from '../../dist/db/migrate.js';
+import {PgRepository} from '../../dist/profile/repository.js';
+import {hashPassword} from '../../dist/profile/auth.js';
+
+const url=process.env.DATABASE_URL;if(!url)throw new Error('DATABASE_URL is required; R3/R4 PostgreSQL API tests are never skipped.');
+const quote=s=>`"${s.replaceAll('"','""')}"`;
+test('R3/R4 API real PostgreSQL login, session expiry, atomic receipts and unsupported run recovery',async t=>{
+ const admin=new Client({connectionString:url});await admin.connect();assert.match((await admin.query('SHOW server_version')).rows[0].server_version,/^18\./);
+ const schema='foxy_api_'+randomUUID().replaceAll('-','');await admin.query(`CREATE SCHEMA ${quote(schema)}`);await admin.query(`SET search_path TO ${quote(schema)},public`);await migrate(admin);
+ const pool=new Pool({connectionString:url,options:`-c search_path=${schema},public`,max:5}),repo=new PgRepository(pool);
+ let now=Date.now(),app=buildApp({profileRepository:repo,clock:()=>now});
+ t.after(async()=>{await app.close();await pool.end();await admin.query(`DROP SCHEMA IF EXISTS ${quote(schema)} CASCADE`);await admin.end();});
+ const accountId=randomUUID(),clientId=randomUUID(),password='synthetic-api-postgres-access',passwordHash=await hashPassword(password);await repo.provision([{accountId,login:'api.fixture',passwordHash}]);
+ const login=await app.inject({method:'POST',url:'/api/v1/auth/login',payload:{login:'api.fixture',password}});assert.equal(login.statusCode,200,login.body);
+ const cookie=login.headers['set-cookie'].split(';')[0],headers={cookie,'x-csrf-token':login.json().csrfToken};
+ assert.equal((await app.inject('/readyz')).statusCode,200);
+ const perform=(command)=>app.inject({method:'POST',url:'/api/v1/operations',headers,payload:command});
+ const startCommand={operationId:randomUUID(),expectedRevision:0,clientId,type:'start_run',payload:{}},start=await perform(startCommand);assert.equal(start.statusCode,200,start.body);const first=start.json(),runId=first.run.runId;
+ assert.equal(first.run.snapshot.state.runId,runId);assert.equal(first.profile.revision,1);
+ const duplicate=await perform(startCommand);assert.equal(duplicate.statusCode,200,duplicate.body);assert.equal(duplicate.json().replayed,true);assert.deepEqual(duplicate.json().profile,first.profile);
+ const conflict=await perform({...startCommand,type:'quick_slots',payload:{slots:[null,null]}});assert.equal(conflict.statusCode,409);assert.equal(conflict.json().error.code,'OPERATION_CONFLICT');
+ const current=await app.inject({url:'/api/v1/profile',headers});assert.deepEqual(current.json(),first.profile);
+ await app.close();app=buildApp({profileRepository:new PgRepository(pool),clock:()=>now});
+ assert.deepEqual((await app.inject({url:'/api/v1/profile',headers})).json(),first.profile);assert.equal((await app.inject({url:'/api/v1/operations/'+startCommand.operationId,headers})).json().operationId,startCommand.operationId);
+ await repo.transaction(accountId,tx=>{tx.run.snapshot={version:'future-incompatible'};});
+ const damaged=await app.inject({url:'/api/v1/run?clientId='+clientId,headers});assert.equal(damaged.statusCode,200);assert.equal(damaged.json().runId,runId);
+ const close=await perform({operationId:randomUUID(),expectedRevision:1,clientId,type:'end_run',payload:{runId,ownerEpoch:1}});assert.equal(close.statusCode,200,close.body);assert.equal(close.json().run,null);assert.equal(close.json().profile.goldMilli,'0');assert.equal(close.json().profile.stats.runs,0);
+ const profileBeforeExpiry=await repo.getProfile(accountId);now+=31*24*60*60*1000;assert.equal((await app.inject({url:'/api/v1/profile',headers})).statusCode,401);assert.deepEqual(await repo.getProfile(accountId),profileBeforeExpiry);
+});

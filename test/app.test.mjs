@@ -35,7 +35,7 @@ test('liveness alias implements its documented response', async (t) => {
   assert.equal(response.headers['cache-control'], 'no-store');
 });
 
-test('R3 operations and registration are not accidentally active', async (t) => {
+test('no public registration endpoint exists and unrelated methods remain unavailable', async (t) => {
   const app = buildApp();
   t.after(() => app.close());
   const validate = ajv.compile(contract.components.schemas.ApiError);
@@ -62,7 +62,7 @@ test('invalid JSON has a bounded error envelope without echoing the payload', as
   assert.equal(response.headers['cache-control'], 'no-store');
 });
 
-test('OpenAPI validates and planned schema references resolve', async () => {
+test('OpenAPI validates and any remaining future schema references resolve', async () => {
   await SwaggerParser.validate(contractUrl.pathname);
   for (const operation of Object.values(contract['x-planned-paths'])) {
     assert.equal(operation.implemented, false);
@@ -73,7 +73,7 @@ test('OpenAPI validates and planned schema references resolve', async () => {
   }
 });
 
-test('future wire schemas reject malformed IDs, negative money and extra trusted fields', async () => {
+test('legacy run request and current profile schemas reject malformed trusted data', async () => {
   const dereferenced = await SwaggerParser.dereference(contractUrl.pathname);
   const validate = ajv.compile(dereferenced.components.schemas.RunStartRequest);
   const valid = {
