@@ -1,3 +1,4 @@
+import { LEGACY_BALANCE } from '../balance/model.js';
 import { createHash, randomInt, randomUUID } from 'node:crypto';
 import { FIXED_STEP } from '../combat/config.js';
 import { RunSimulation, type Command, type GameEvent } from '../combat/simulation.js';
@@ -56,7 +57,15 @@ export function validateOperation(input: unknown): asserts input is Operation {
 }
 export function publicRun(run: StoredRun|null, clientId: string): RunView|null {
   if (!run) return null;
-  return {runId:run.runId,loot:structuredClone(run.loot??{goldMilli:'0',components:{steel:0,ember:0,core:0}}),snapshot:structuredClone(run.snapshot) as RunView['snapshot'], control:run.ownerClientId===clientId?'owner':'readOnly',ownerEpoch:run.ownerEpoch,updatedAt:run.updatedAt};
+  return {balance:structuredClone(run.balance??LEGACY_BALANCE),runId:run.runId,loot:structuredClone(run.loot??{goldMilli:'0',components:{steel:0,ember:0,core:0}}),snapshot:structuredClone(run.snapshot) as RunView['snapshot'], control:run.ownerClientId===clientId?'owner':'readOnly',ownerEpoch:run.ownerEpoch,updatedAt:run.updatedAt};
+}
+export function publicOperationResult(result:OperationResult):OperationResult {
+ const output=structuredClone(result);
+ if(output.run&&!output.run.balance){
+  if(output.run.snapshot.version!=='r34.1')reject('BALANCE_STORAGE_UNAVAILABLE',503);
+  output.run.balance=structuredClone(LEGACY_BALANCE);
+ }
+ return output;
 }
 export class ProfileService {
   constructor(readonly repository: Repository, private readonly clock: ()=>number = Date.now) {}
@@ -72,7 +81,7 @@ export class ProfileService {
       const prior=tx.operations.get(operation.operationId);
       if (prior) {
         if (prior.hash!==hash) reject('OPERATION_CONFLICT',409);
-        return {...structuredClone(prior.result),replayed:true};
+        return {...publicOperationResult(prior.result),replayed:true};
       }
       validateProfile(tx.profile);
       if (operation.expectedRevision!==tx.profile.revision) reject('REVISION_CONFLICT',409);
@@ -87,7 +96,9 @@ export class ProfileService {
     },operation.operationId);
   }
   private restore(run: StoredRun): RunSimulation {
-    try { return RunSimulation.restore(run.snapshot); } catch { return reject('RUN_INCOMPATIBLE',409); }
+    try { const simulation=RunSimulation.restore(run.snapshot);
+      if(run.balanceRevision){const compiled=run.balance?.compiled;if(!compiled||canonical(simulation.config)!==canonical(compiled.config)||canonical(simulation.shopZone)!==canonical(compiled.shopZone)||canonical(simulation.runtimeBalance)!==canonical(compiled.runtime))reject('RUN_INCOMPATIBLE',409);}
+      return simulation; } catch { return reject('RUN_INCOMPATIBLE',409); }
   }
   private owned(tx: TransactionContext, op: Operation): StoredRun {
     const payload=op.payload as {runId?:string;ownerEpoch?:number};
@@ -117,7 +128,7 @@ export class ProfileService {
     if(tx.profile.stats.totalKills>=Number.MAX_SAFE_INTEGER)reject('PROFILE_OVERFLOW',503);
     run.loot??={goldMilli:'0',components:{steel:0,ember:0,core:0}};
     run.rewardedEnemyIds.push(event.enemyId);
-    const reward=rewardFor(event.kind);
+    const reward=rewardFor(event.kind,(run.balance??LEGACY_BALANCE).compiled.rewards);
     const multiplier=BigInt(event.goldMultiplierMilli??1000);
     const rewardGold=parseGoldMilli(reward.baseGoldMilli)*multiplier/1000n;
     const gold=parseGoldMilli(tx.profile.goldMilli)+rewardGold;
@@ -133,8 +144,8 @@ export class ProfileService {
     }
     tx.profile.stats.totalKills++;
   }
-  private spend(profile:Profile,definitionId:string,currentLevel=0):void {
-    let cost;try{cost=recipeCost(definitionId,currentLevel);}catch{return reject('UNKNOWN_RECIPE');}
+  private spend(profile:Profile,definitionId:string,currentLevel=0,catalog=EQUIPMENT_CATALOG):void {
+    let cost;try{cost=recipeCost(definitionId,currentLevel,catalog);}catch{return reject('UNKNOWN_RECIPE');}
     if(!canCraft(profile,cost))reject('INSUFFICIENT_RESOURCES');
     profile.goldMilli=(parseGoldMilli(profile.goldMilli)-parseGoldMilli(cost.goldMilli)).toString();
     for(const key of ['steel','ember','core'] as const)profile.components[key]-=cost.components[key];
@@ -156,8 +167,9 @@ export class ProfileService {
     switch(op.type) {
       case 'start_run': {
         if(tx.run){const sim=this.restore(tx.run);if(sim.state.phase!=='gameOver')reject('RUN_BUSY',409);}
-        const runId=randomUUID(); const sim=new RunSimulation(runId,randomInt(0,0x1_0000_0000));sim.pause();sim.setEquipment(computeModifiers(tx.profile));
-        tx.run={runId,loot:{goldMilli:'0',components:{steel:0,ember:0,core:0}},snapshot:sim.exportSnapshot(),ownerClientId:op.clientId,ownerEpoch:1,updatedAt:new Date(this.clock()).toISOString(),wallAnchorMs:this.clock(),simAnchorTime:0.25,rewardedEnemyIds:[],statsCommitted:false};break;
+        const balance=tx.currentBalance;if(!balance)reject('BALANCE_STORAGE_UNAVAILABLE',503);const compiled=balance.compiled;
+        const runId=randomUUID(); const sim=new RunSimulation(runId,randomInt(0,0x1_0000_0000),{config:compiled.config,shopZone:compiled.shopZone,...(compiled.runtime===undefined?{}:{runtimeBalance:compiled.runtime})});sim.pause();sim.setEquipment(computeModifiers(tx.profile,compiled.equipment,compiled.baseModifiers));
+        tx.run={balanceRevision:balance.revision,balance:structuredClone(balance),runId,loot:{goldMilli:'0',components:{steel:0,ember:0,core:0}},snapshot:sim.exportSnapshot(),ownerClientId:op.clientId,ownerEpoch:1,updatedAt:new Date(this.clock()).toISOString(),wallAnchorMs:this.clock(),simAnchorTime:0.25,rewardedEnemyIds:[],statsCommitted:false};break;
       }
       case 'advance_run': {
         const run=this.owned(tx,op),sim=this.restore(run);
@@ -188,27 +200,28 @@ export class ProfileService {
       }
       case 'craft': {
         const sim=this.shop(tx),definitionId=p.definitionId as string;
-        const definition=EQUIPMENT_CATALOG.items.find(i=>i.id===definitionId),consumable=EQUIPMENT_CATALOG.consumables.find(i=>i.id===definitionId);
+        const catalog=(tx.run!.balance??LEGACY_BALANCE).compiled.equipment;
+        const definition=catalog.items.find(i=>i.id===definitionId),consumable=catalog.consumables.find(i=>i.id===definitionId);
         if(!definition&&!consumable)reject('UNKNOWN_RECIPE');
-        this.spend(tx.profile,definitionId);
+        this.spend(tx.profile,definitionId,0,catalog);
         if(definition)tx.profile.items.push({id:randomUUID(),definitionId:definition.id,level:1});
         else {const key=definitionId as ConsumableId;if(tx.profile.consumables[key]>=MAX_COMPONENT)reject('PROFILE_OVERFLOW',503);tx.profile.consumables[key]++;}
         this.save(tx.run!,sim);break;
       }
       case 'upgrade': {
         const sim=this.shop(tx),item=tx.profile.items.find(i=>i.id===p.itemId);if(!item)reject('ITEM_NOT_FOUND',403);
-        this.spend(tx.profile,item.definitionId,item.level);item.level++;sim.setEquipment(computeModifiers(tx.profile));this.save(tx.run!,sim);break;
+        const compiled=(tx.run!.balance??LEGACY_BALANCE).compiled;this.spend(tx.profile,item.definitionId,item.level,compiled.equipment);item.level++;sim.setEquipment(computeModifiers(tx.profile,compiled.equipment,compiled.baseModifiers));this.save(tx.run!,sim);break;
       }
       case 'equip': {
         const sim=this.galleryOrShop(tx),slot=p.slot as Slot,itemId=p.itemId as string|null;
         if(itemId!==null){const item=tx.profile.items.find(i=>i.id===itemId);if(!item)reject('ITEM_NOT_FOUND',403);const definition=getItemDefinition(item.definitionId);if(!definition||definition.slot!==slot)reject('INCOMPATIBLE_ITEM');}
         tx.profile.loadouts.pudge[slot]=itemId;
-        if(sim){sim.setEquipment(computeModifiers(tx.profile));this.save(tx.run!,sim);}break;
+        if(sim){const compiled=(tx.run!.balance??LEGACY_BALANCE).compiled;sim.setEquipment(computeModifiers(tx.profile,compiled.equipment,compiled.baseModifiers));this.save(tx.run!,sim);}break;
       }
       case 'quick_slots': {this.galleryOrShop(tx);tx.profile.loadouts.pudge.quick=p.slots as [ConsumableId|null,ConsumableId|null];break;}
       case 'consume': {
         const run=this.owned(tx,op),sim=this.restore(run),definitionId=p.definitionId as ConsumableId;
-        if(!EQUIPMENT_CATALOG.consumables.some(i=>i.id===definitionId)||!tx.profile.loadouts.pudge.quick.includes(definitionId))reject('CONSUMABLE_UNAVAILABLE');
+        if(!(run.balance??LEGACY_BALANCE).compiled.equipment.consumables.some(i=>i.id===definitionId)||!tx.profile.loadouts.pudge.quick.includes(definitionId))reject('CONSUMABLE_UNAVAILABLE');
         if(tx.profile.consumables[definitionId]<=0)reject('CONSUMABLE_UNAVAILABLE');
         try { if(!sim.applyConsumable(definitionId))reject('CONSUMABLE_UNAVAILABLE'); }catch{return reject('CONSUMABLE_UNAVAILABLE');}
         tx.profile.consumables[definitionId]--;this.save(run,sim);break;

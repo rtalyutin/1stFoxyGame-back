@@ -21,7 +21,7 @@ function count(value: unknown, maximum: number): asserts value is number {
   if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0 || value > maximum) throw new Error('Invalid drop count');
 }
 /** Server rewards are versioned content; client prices or kill payloads cannot override them. */
-export function validateRewardCatalog(input: unknown): RewardCatalog {
+export function validateRewardCatalog(input: unknown, tunableSources = false): RewardCatalog {
   object(input, ['version', 'components', 'rewards']);
   if (typeof input.version !== 'string' || !/^r[0-9]+\.[0-9]+$/.test(input.version) || input.version.length > 32) throw new Error('Unsupported reward version');
   if (!Array.isArray(input.components) || input.components.length !== 3) throw new Error('Expected three components');
@@ -41,8 +41,8 @@ export function validateRewardCatalog(input: unknown): RewardCatalog {
     parseGoldMilli(reward.baseGoldMilli);
     count(reward.commonDrops, 2); count(reward.coreDrops, 1);
     if (typeof reward.steelProbability !== 'number' || !Number.isFinite(reward.steelProbability) || reward.steelProbability < 0 || reward.steelProbability > 1) throw new Error('Invalid steel probability');
-    if (reward.kind === 'normal' && (reward.commonDrops !== 0 || reward.coreDrops !== 0)) throw new Error('Ordinary enemy cannot drop components');
-    if (reward.kind === 'strong' && reward.coreDrops !== 0) throw new Error('Core source must be boss');
+    if (!tunableSources && reward.kind === 'normal' && (reward.commonDrops !== 0 || reward.coreDrops !== 0)) throw new Error('Ordinary enemy cannot drop components');
+    if (!tunableSources && reward.kind === 'strong' && reward.coreDrops !== 0) throw new Error('Core source must be boss');
   }
   return structuredClone(input) as unknown as RewardCatalog;
 }

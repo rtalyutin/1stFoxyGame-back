@@ -1,8 +1,9 @@
+import { BalanceError, validateBalanceValues } from './balance/model.js';
 import { readFileSync } from 'node:fs';
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import Fastify, { type FastifyServerOptions } from 'fastify';
 import { catalog } from './game/catalog.js';
-import { ProfileService, ProfileError, publicRun, EQUIPMENT_CATALOG, validateOperation } from './profile/service.js';
+import { ProfileService, ProfileError, publicRun, publicOperationResult, EQUIPMENT_CATALOG, validateOperation } from './profile/service.js';
 import type { Repository, Session } from './profile/repository.js';
 import { verifyPassword, verifyDummyPassword } from './profile/auth.js';
 
@@ -102,6 +103,15 @@ export function buildApp(options: AppOptions = {}) {
     if(request.url.includes('?'))throw new ProfileError('INVALID_REQUEST',400);
     return repository!.getProfile(session.accountId);
   });
+  app.get('/api/v1/balance',async(request)=>{if(request.url.includes('?'))throw new ProfileError('INVALID_REQUEST',400);if(!repository)throw new ProfileError('BALANCE_STORAGE_UNAVAILABLE',503);return repository.getBalance();});
+  app.get('/api/v1/admin/balance',async(request)=>{const session=await sessionFor(request);if(request.url.includes('?'))throw new ProfileError('INVALID_REQUEST',400);if(!await repository!.isBalanceAdmin(session.accountId))throw new ProfileError('BALANCE_FORBIDDEN',403);return repository!.getBalance();});
+  app.put('/api/v1/admin/balance',async(request)=>{
+    const session=await sessionFor(request);csrf(request,session);
+    if(!await repository!.isBalanceAdmin(session.accountId))throw new ProfileError('BALANCE_FORBIDDEN',403);
+    const body=request.body as {expectedRevision?:unknown;values?:unknown};
+    if(request.url.includes('?')||!body||typeof body!=='object'||Array.isArray(body)||Object.keys(body).sort().join(',')!=='expectedRevision,values'||typeof body.expectedRevision!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(body.expectedRevision))throw new ProfileError('INVALID_BALANCE',422);
+    return repository!.publishBalance(session.accountId,body.expectedRevision.toLowerCase(),validateBalanceValues(body.values));
+  });
   app.get('/api/v1/economy/catalog',()=>EQUIPMENT_CATALOG);
   app.get('/readyz',async()=>{if(!repository)throw new ProfileError('SERVICE_UNAVAILABLE',503);await repository.readiness();return{status:'ready',apiVersion:'1'};});
   app.get('/api/v1/run',async(request)=>{
@@ -118,7 +128,7 @@ export function buildApp(options: AppOptions = {}) {
     const session=await sessionFor(request),operationId=(request.params as {operationId:string}).operationId;
     if(request.url.includes('?'))throw new ProfileError('INVALID_REQUEST',400);
     if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(operationId))throw new ProfileError('INVALID_REQUEST',400);
-    const operation=await repository!.getOperation(session.accountId,operationId);if(!operation)throw new ProfileError('OPERATION_NOT_FOUND',404);return operation.result;
+    const operation=await repository!.getOperation(session.accountId,operationId);if(!operation)throw new ProfileError('OPERATION_NOT_FOUND',404);return publicOperationResult(operation.result);
   });
 
   app.setNotFoundHandler((_request, reply) => {
@@ -126,7 +136,7 @@ export function buildApp(options: AppOptions = {}) {
   });
 
   app.setErrorHandler((error, request, reply) => {
-    if(error instanceof ProfileError){reply.code(error.statusCode).send({error:{code:error.code,message:error.message}});return;}
+    if(error instanceof ProfileError||error instanceof BalanceError){reply.code(error.statusCode).send({error:{code:error.code,message:error.message}});return;}
     if(typeof error==='object'&&error!==null&&'statusCode'in error&&error.statusCode===503){request.log.error({code:'PROFILE_STORAGE_UNAVAILABLE'},'Profile storage unavailable');reply.code(503).send({error:{code:'PROFILE_STORAGE_UNAVAILABLE',message:'Persistent profile is unavailable.'}});return;}
     const suppliedStatus = typeof error === 'object' && error !== null && 'statusCode' in error
       ? error.statusCode : undefined;

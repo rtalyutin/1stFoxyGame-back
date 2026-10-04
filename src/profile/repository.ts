@@ -1,15 +1,17 @@
-import type {randomUUID} from 'node:crypto';
+import {randomUUID} from 'node:crypto';
 import {Pool,type PoolConfig,type PoolClient,type Client} from 'pg';
 import {EntityStore} from '../db/entity-store.js';
 import type {Profile,OperationResult,ConsumableId,ItemDefinitionId,Slot,Components} from './contracts.js';
 import {createEmptyProfile,validateProfile} from './equipment.js';
+import {readBalance,accountIsBalanceAdmin,publishBalance} from '../balance/store.js';
+import {DEFAULT_BALANCE_VALUES,INITIAL_BALANCE_REVISION,balanceDocument,pinnedBalance,LEGACY_BALANCE,BalanceError,type BalanceDocument,type PinnedBalance,type BalanceValue} from '../balance/model.js';
 import {validateProvisionAccount,PASSWORD_HASH_PATTERN,type ProvisionAccount} from './auth.js';
 
 export interface Account {id:string;login:string;passwordHash:string}
 export interface Session {tokenHash:string;accountId:string;login:string;csrf:string;expiresAt:string}
-export interface StoredRun {runId:string;snapshot:unknown;ownerClientId:string;ownerEpoch:number;updatedAt:string;wallAnchorMs:number;simAnchorTime:number;rewardedEnemyIds:string[];statsCommitted:boolean;loot?:{goldMilli:string;components:Components}}
+export interface StoredRun {runId:string;snapshot:unknown;ownerClientId:string;ownerEpoch:number;updatedAt:string;wallAnchorMs:number;simAnchorTime:number;rewardedEnemyIds:string[];statsCommitted:boolean;loot?:{goldMilli:string;components:Components};balanceRevision?:string|null;balance?:PinnedBalance}
 export interface StoredOperation {hash:string;result:OperationResult}
-export interface TransactionContext {profile:Profile;run:StoredRun|null;operations:Map<string,StoredOperation>}
+export interface TransactionContext {profile:Profile;run:StoredRun|null;operations:Map<string,StoredOperation>;currentBalance?:PinnedBalance}
 export interface Repository {
  transaction<T>(accountId:string,fn:(tx:TransactionContext)=>Promise<T>|T,operationId?:string):Promise<T>;
  getProfile(accountId:string):Promise<Profile>;
@@ -21,6 +23,10 @@ export interface Repository {
  revokeSession(tokenHash:string):Promise<void>;
  provision(accounts:ProvisionAccount[]):Promise<void>;
  rotatePassword(accountId:string,passwordHash:string):Promise<void>;
+ getBalance():Promise<BalanceDocument>;
+ isBalanceAdmin(accountId:string):Promise<boolean>;
+ publishBalance(accountId:string,expectedRevision:string,values:Record<string,BalanceValue>):Promise<BalanceDocument>;
+ setBalanceAdmin(accountId:string,enabled:boolean):Promise<void>;
  readiness():Promise<void>;
  close():Promise<void>;
 }
@@ -87,16 +93,16 @@ export class PgRepository implements Repository {
   await c.query('UPDATE entities SET revision=$2,updated_at=now() WHERE id=$1',[profileId,profile.revision]);
  }
  private async loadRun(c:PoolClient,accountId:string):Promise<StoredRun|null>{
-  const r=(await c.query(`SELECT run_id,snapshot,owner_client_id,owner_epoch,updated_at,wall_anchor_ms,sim_anchor_time,rewarded_enemy_ids,stats_committed,loot_gold_milli,loot_steel,loot_ember,loot_core FROM profile_runs WHERE account_id=$1`,[accountId])).rows[0];if(!r)return null;
-  return {runId:r.run_id,snapshot:r.snapshot,ownerClientId:r.owner_client_id,ownerEpoch:safeInteger(String(r.owner_epoch)),updatedAt:new Date(r.updated_at).toISOString(),wallAnchorMs:safeInteger(String(r.wall_anchor_ms)),simAnchorTime:Number(r.sim_anchor_time),rewardedEnemyIds:r.rewarded_enemy_ids,statsCommitted:r.stats_committed,loot:{goldMilli:integerDecimal(r.loot_gold_milli),components:{steel:safeInteger(String(r.loot_steel)),ember:safeInteger(String(r.loot_ember)),core:safeInteger(String(r.loot_core))}}} as StoredRun;
+  const r=(await c.query(`SELECT balance_revision,run_id,snapshot,owner_client_id,owner_epoch,updated_at,wall_anchor_ms,sim_anchor_time,rewarded_enemy_ids,stats_committed,loot_gold_milli,loot_steel,loot_ember,loot_core FROM profile_runs WHERE account_id=$1`,[accountId])).rows[0];if(!r)return null;
+  return {balanceRevision:r.balance_revision,balance:r.balance_revision?pinnedBalance(await readBalance(c,r.balance_revision)):clone(LEGACY_BALANCE),runId:r.run_id,snapshot:r.snapshot,ownerClientId:r.owner_client_id,ownerEpoch:safeInteger(String(r.owner_epoch)),updatedAt:new Date(r.updated_at).toISOString(),wallAnchorMs:safeInteger(String(r.wall_anchor_ms)),simAnchorTime:Number(r.sim_anchor_time),rewardedEnemyIds:r.rewarded_enemy_ids,statsCommitted:r.stats_committed,loot:{goldMilli:integerDecimal(r.loot_gold_milli),components:{steel:safeInteger(String(r.loot_steel)),ember:safeInteger(String(r.loot_ember)),core:safeInteger(String(r.loot_core))}}} as StoredRun;
  }
  async transaction<T>(accountId:string,fn:(tx:TransactionContext)=>Promise<T>|T,operationId?:string):Promise<T>{return this.atom(async c=>{
-  await this.locks(c,accountId);const profile=await this.loadProfile(c,accountId),run=await this.loadRun(c,accountId);
+  await c.query("SELECT set_config('foxy.balance_writer','runner-balance.1',true)");await this.locks(c,accountId);const profile=await this.loadProfile(c,accountId),run=await this.loadRun(c,accountId);
   const operations=new Map<string,StoredOperation>((await c.query(`SELECT operation_id,request_hash,result FROM profile_operations WHERE account_id=$1${operationId?' AND operation_id=$2':''}`,operationId?[accountId,operationId]:[accountId])).rows.map(r=>[r.operation_id,{hash:r.request_hash,result:r.result}]));
-  const existingOps=clone(operations),ctx:TransactionContext={profile,run,operations};const before=JSON.stringify(profile),beforeRun=JSON.stringify(run);
+  const existingOps=clone(operations),ctx:TransactionContext={profile,run,operations,currentBalance:pinnedBalance(await readBalance(c))};const before=JSON.stringify(profile),beforeRun=JSON.stringify(run);
   const result=await fn(ctx);if(ctx.profile.accountId!==accountId)throw new StorageError();
   if(JSON.stringify(ctx.profile)!==before)await this.saveProfile(c,ctx.profile);
-  if(JSON.stringify(ctx.run)!==beforeRun){if(ctx.run===null)await c.query('DELETE FROM profile_runs WHERE account_id=$1',[accountId]);else{const r=ctx.run,loot=r.loot??{goldMilli:'0',components:{steel:0,ember:0,core:0}};await c.query(`INSERT INTO profile_runs(account_id,run_id,snapshot,owner_client_id,owner_epoch,updated_at,wall_anchor_ms,sim_anchor_time,rewarded_enemy_ids,stats_committed,loot_gold_milli,loot_steel,loot_ember,loot_core) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) ON CONFLICT(account_id) DO UPDATE SET run_id=EXCLUDED.run_id,snapshot=EXCLUDED.snapshot,owner_client_id=EXCLUDED.owner_client_id,owner_epoch=EXCLUDED.owner_epoch,updated_at=EXCLUDED.updated_at,wall_anchor_ms=EXCLUDED.wall_anchor_ms,sim_anchor_time=EXCLUDED.sim_anchor_time,rewarded_enemy_ids=EXCLUDED.rewarded_enemy_ids,stats_committed=EXCLUDED.stats_committed,loot_gold_milli=EXCLUDED.loot_gold_milli,loot_steel=EXCLUDED.loot_steel,loot_ember=EXCLUDED.loot_ember,loot_core=EXCLUDED.loot_core`,[accountId,r.runId,r.snapshot,r.ownerClientId,r.ownerEpoch,r.updatedAt,r.wallAnchorMs,r.simAnchorTime,r.rewardedEnemyIds,r.statsCommitted,loot.goldMilli,loot.components.steel,loot.components.ember,loot.components.core]);}}
+  if(JSON.stringify(ctx.run)!==beforeRun){if(ctx.run===null)await c.query('DELETE FROM profile_runs WHERE account_id=$1',[accountId]);else{const r=ctx.run,loot=r.loot??{goldMilli:'0',components:{steel:0,ember:0,core:0}};await c.query(`INSERT INTO profile_runs(account_id,run_id,balance_revision,snapshot,owner_client_id,owner_epoch,updated_at,wall_anchor_ms,sim_anchor_time,rewarded_enemy_ids,stats_committed,loot_gold_milli,loot_steel,loot_ember,loot_core) VALUES($1,$2,$15,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) ON CONFLICT(account_id) DO UPDATE SET run_id=EXCLUDED.run_id,balance_revision=EXCLUDED.balance_revision,snapshot=EXCLUDED.snapshot,owner_client_id=EXCLUDED.owner_client_id,owner_epoch=EXCLUDED.owner_epoch,updated_at=EXCLUDED.updated_at,wall_anchor_ms=EXCLUDED.wall_anchor_ms,sim_anchor_time=EXCLUDED.sim_anchor_time,rewarded_enemy_ids=EXCLUDED.rewarded_enemy_ids,stats_committed=EXCLUDED.stats_committed,loot_gold_milli=EXCLUDED.loot_gold_milli,loot_steel=EXCLUDED.loot_steel,loot_ember=EXCLUDED.loot_ember,loot_core=EXCLUDED.loot_core`,[accountId,r.runId,r.snapshot,r.ownerClientId,r.ownerEpoch,r.updatedAt,r.wallAnchorMs,r.simAnchorTime,r.rewardedEnemyIds,r.statsCommitted,loot.goldMilli,loot.components.steel,loot.components.ember,loot.components.core,r.balanceRevision??null]);}}
   for(const [id,op]of ctx.operations){const old=existingOps.get(id);if(old){if(JSON.stringify(old)!==JSON.stringify(op))throw new StorageError();}else await c.query('INSERT INTO profile_operations(account_id,operation_id,request_hash,result) VALUES($1,$2,$3,$4)',[accountId,id,op.hash,op.result]);}
   if([...existingOps.keys()].some(id=>!ctx.operations.has(id)))throw new StorageError();return clone(result);
  });}
@@ -120,23 +126,29 @@ export class PgRepository implements Repository {
  }
  async rotatePassword(accountId:string,passwordHash:string):Promise<void>{if(!PASSWORD_HASH_PATTERN.test(passwordHash))throw new Error('Invalid password hash.');await this.atom(async c=>{await this.locks(c,accountId);await new EntityStore(c as unknown as Client).set(accountId,'password-hash',{type:'text',value:passwordHash});await c.query('DELETE FROM profile_sessions WHERE account_id=$1',[accountId]);});}
  async readiness():Promise<void>{await this.client(async c=>{
-  const migrations=['001-constructor.sql','002-content.sql','003-profile.sql','004-economy.sql'];
+  const migrations=['001-constructor.sql','002-content.sql','003-profile.sql','004-economy.sql','005-balance.sql'];
   const r=(await c.query('SELECT count(*)::int AS n FROM applied_migrations WHERE id=ANY($1::text[])',[migrations])).rows[0];if(r?.n!==migrations.length)throw new StorageError();
   const types=(await c.query('SELECT count(*)::int AS n FROM entity_types WHERE id=ANY($1::uuid[]) AND archived_at IS NULL',[typeIds])).rows[0];if(types?.n!==4)throw new StorageError();
   const economyTypes=(await c.query("SELECT count(*)::int AS n FROM entity_types WHERE code IN ('component-definition','reward-definition') AND archived_at IS NULL")).rows[0];if(economyTypes?.n!==2)throw new StorageError();
   const expected=[...expectedParameters,...expectedEconomyParameters];
   const parameters=(await c.query('SELECT count(*)::int AS n FROM entity_parameters p JOIN entity_types t ON t.id=p.entity_type_id JOIN unnest($1::text[],$2::text[]) x(type_code,code) ON x.type_code=t.code AND x.code=p.code WHERE p.archived_at IS NULL',[expected.map(e=>e[0]),expected.map(e=>e[1])])).rows[0];if(parameters?.n!==expected.length)throw new StorageError();
   const definitions=(await c.query(`SELECT count(*)::int AS n FROM entities e JOIN entity_types t ON t.id=e.entity_type_id JOIN entity_parameter_values code ON code.entity_id=e.id JOIN entity_parameters cp ON cp.id=code.parameter_id AND cp.code='code' JOIN entity_parameter_values version ON version.entity_id=e.id JOIN entity_parameters vp ON vp.id=version.parameter_id AND vp.code='version' WHERE e.state='active' AND version.value_text='r34.1' AND ((t.code='component-definition' AND code.value_text IN ('steel','ember','core')) OR (t.code='reward-definition' AND code.value_text IN ('normal','strong','boss')))`)).rows[0];if(definitions?.n!==6)throw new StorageError();
+  await readBalance(c);
   await c.query('SELECT token_hash FROM profile_sessions LIMIT 0');await c.query('SELECT account_id FROM profile_operations LIMIT 0');await c.query('SELECT account_id,loot_gold_milli,loot_steel,loot_ember,loot_core FROM profile_runs LIMIT 0');
  });}
+ async getBalance():Promise<BalanceDocument>{return this.client(c=>readBalance(c));}
+ async isBalanceAdmin(id:string):Promise<boolean>{return this.client(c=>accountIsBalanceAdmin(c,id));}
+ async publishBalance(id:string,expectedRevision:string,values:Record<string,BalanceValue>):Promise<BalanceDocument>{return this.atom(c=>publishBalance(c,id,expectedRevision,values));}
+ async setBalanceAdmin(id:string,enabled:boolean):Promise<void>{await this.atom(async c=>{await this.locks(c,id);await new EntityStore(c as unknown as Client).set(id,'balance-admin',{type:'boolean',value:enabled});});}
  async close():Promise<void>{if(this.ownsPool)await this.pool.end();}
 }
 
 /** Explicit test injection only; production never falls back to process memory. */
 export class MemoryRepository implements Repository {
+ private balance=balanceDocument(INITIAL_BALANCE_REVISION,{...DEFAULT_BALANCE_VALUES});private readonly admins=new Set<string>();
  private readonly accounts=new Map<string,Account>();private readonly state=new Map<string,TransactionContext>();private readonly sessions=new Map<string,Session>();private readonly queues=new Map<string,Promise<void>>();
  private async lock<T>(id:string,fn:()=>Promise<T>):Promise<T>{const prior=this.queues.get(id)??Promise.resolve();let release!:()=>void;const gate=new Promise<void>(r=>{release=r;});const tail=prior.then(()=>gate);this.queues.set(id,tail);await prior;try{return await fn();}finally{release();if(this.queues.get(id)===tail)this.queues.delete(id);}}
- async transaction<T>(id:string,fn:(tx:TransactionContext)=>Promise<T>|T):Promise<T>{return this.lock(id,async()=>{const state=this.state.get(id);if(!state)throw new StorageError();const next=clone(state),result=await fn(next);validateProfile(next.profile);if(next.profile.accountId!==id)throw new StorageError();this.state.set(id,next);return clone(result);});}
+ async transaction<T>(id:string,fn:(tx:TransactionContext)=>Promise<T>|T):Promise<T>{return this.lock(id,async()=>{const state=this.state.get(id);if(!state)throw new StorageError();const next=clone(state);next.currentBalance=pinnedBalance(this.balance);if(next.run&&!next.run.balance)next.run.balance=clone(LEGACY_BALANCE);const result=await fn(next);validateProfile(next.profile);if(next.profile.accountId!==id)throw new StorageError();this.state.set(id,next);return clone(result);});}
  async getProfile(id:string):Promise<Profile>{const s=this.state.get(id);if(!s)throw new StorageError();return clone(s.profile);}
  async getRun(id:string):Promise<StoredRun|null>{return clone(this.state.get(id)?.run??null);}
  async getOperation(id:string,op:string):Promise<StoredOperation|null>{return clone(this.state.get(id)?.operations.get(op)??null);}
@@ -146,6 +158,10 @@ export class MemoryRepository implements Repository {
  async revokeSession(hash:string):Promise<void>{this.sessions.delete(hash);}
  async provision(accounts:ProvisionAccount[]):Promise<void>{const entries=accounts.map(validateProvisionAccount);if(new Set(entries.map(e=>e.accountId)).size!==entries.length||new Set(entries.map(e=>e.login)).size!==entries.length)throw new Error('Duplicate provision identity.');const nextAccounts=clone(this.accounts),nextState=clone(this.state);for(const e of entries){const previous=nextAccounts.get(e.accountId);if(previous){if(previous.login!==e.login)throw new Error('Provision identity conflict.');continue;}if([...nextAccounts.values()].some(a=>a.login===e.login))throw new Error('Provision login conflict.');nextAccounts.set(e.accountId,{id:e.accountId,login:e.login,passwordHash:e.passwordHash});nextState.set(e.accountId,{profile:createEmptyProfile(e.accountId),run:null,operations:new Map()});}for(const [id,a]of nextAccounts)this.accounts.set(id,a);for(const [id,s]of nextState)this.state.set(id,s);}
  async rotatePassword(id:string,passwordHash:string):Promise<void>{if(!PASSWORD_HASH_PATTERN.test(passwordHash))throw new Error('Invalid password hash.');const a=this.accounts.get(id);if(!a)throw new StorageError();a.passwordHash=passwordHash;for(const [h,s]of this.sessions)if(s.accountId===id)this.sessions.delete(h);}
+ async getBalance():Promise<BalanceDocument>{return clone(this.balance);}
+ async isBalanceAdmin(id:string):Promise<boolean>{return this.admins.has(id);}
+ async publishBalance(id:string,expectedRevision:string,values:Record<string,BalanceValue>):Promise<BalanceDocument>{return this.lock('balance-publication',async()=>{if(!this.admins.has(id))throw new BalanceError('BALANCE_FORBIDDEN',403);if(expectedRevision!==this.balance.revision)throw new BalanceError('BALANCE_REVISION_CONFLICT',409);const next=balanceDocument(randomUUID(),values);this.balance=next;return clone(next);});}
+ async setBalanceAdmin(id:string,enabled:boolean):Promise<void>{if(!this.accounts.has(id))throw new StorageError();if(enabled)this.admins.add(id);else this.admins.delete(id);}
  async close():Promise<void>{}
  async readiness():Promise<void>{}
 }

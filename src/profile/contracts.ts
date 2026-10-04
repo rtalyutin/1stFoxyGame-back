@@ -1,3 +1,4 @@
+import type { PinnedBalance } from '../balance/model.js';
 import type { Command, SimulationSnapshot } from '../combat/simulation.js';
 
 export type GoldMilli = string;
@@ -35,7 +36,7 @@ export interface Profile {
   consumables: Record<ConsumableId, number>;
   stats: { runs: number; totalKills: number; bestDistance: number };
 }
-export interface RunView { runId: string; loot: {goldMilli: GoldMilli; components: Components}; snapshot: SimulationSnapshot; control: 'owner' | 'readOnly'; ownerEpoch: number; updatedAt: string; }
+export interface RunView { balance?: PinnedBalance; runId: string; loot: {goldMilli: GoldMilli; components: Components}; snapshot: SimulationSnapshot; control: 'owner' | 'readOnly'; ownerEpoch: number; updatedAt: string; }
 export type RunOwnership = { runId: string; ownerEpoch: number };
 export type OperationAction =
   | { type: 'start_run'; payload: Record<string, never> }

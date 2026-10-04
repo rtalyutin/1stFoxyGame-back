@@ -31,9 +31,17 @@ test('PostgreSQL 18 reward migration preserves prior property, exact typed seed 
   await migrate(admin, migrations.filter((migration) => migration.id < '004-economy.sql'));
   const accountId = randomUUID();
   await repository.provision([{ accountId, login: `economy_${accountId.replaceAll('-', '')}`, passwordHash: await hashPassword('synthetic-only-test-password') }]);
-  await repository.transaction(accountId, (tx) => { tx.profile.goldMilli = '123456'; tx.profile.components = { steel: 4, ember: 5, core: 6 }; tx.profile.revision = 3; });
+  // Seed the old 001–003 authority directly: the current repository's run transaction
+  // intentionally requires the new balance columns and cannot emulate an old app.
+  await atomic(admin, async () => {
+    const profileId = (await admin.query("SELECT v.entity_id FROM entity_parameter_values v JOIN entity_parameters p ON p.id=v.parameter_id JOIN entity_types t ON t.id=v.entity_type_id WHERE t.code='profile' AND p.code='owner' AND v.value_reference=$1", [accountId])).rows[0].entity_id;
+    const store = new EntityStore(admin);
+    await store.set(profileId, 'gold-milli', { type: 'decimal', value: '123456' });
+    for (const [code, value] of Object.entries({ steel: 4, ember: 5, core: 6 })) await store.set(profileId, code, { type: 'integer', value: BigInt(value) });
+    await admin.query('UPDATE entities SET revision=3 WHERE id=$1', [profileId]);
+  });
   const profile = await repository.getProfile(accountId);
-  assert.deepEqual(await migrate(admin), ['004-economy.sql']);
+  assert.deepEqual(await migrate(admin), ['004-economy.sql','005-balance.sql']);
   assert.deepEqual(await migrate(admin), []);
   assert.deepEqual(await repository.getProfile(accountId), profile);
   await repository.readiness();
