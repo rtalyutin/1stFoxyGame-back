@@ -9,7 +9,7 @@ import {hashPassword} from '../../dist/profile/auth.js';
 
 const url=process.env.DATABASE_URL;if(!url)throw new Error('DATABASE_URL is required; R3/R4 PostgreSQL API tests are never skipped.');
 const quote=s=>`"${s.replaceAll('"','""')}"`;
-test('R3/R4 API real PostgreSQL login, session expiry, atomic receipts and unsupported run recovery',async t=>{
+test('R3/R4 API real PostgreSQL login, session expiry, atomic receipts and corrupt and legacy incompatible run recovery',async t=>{
  const admin=new Client({connectionString:url});await admin.connect();assert.match((await admin.query('SHOW server_version')).rows[0].server_version,/^18\./);
  const schema='foxy_api_'+randomUUID().replaceAll('-','');await admin.query(`CREATE SCHEMA ${quote(schema)}`);await admin.query(`SET search_path TO ${quote(schema)},public`);await migrate(admin);
  const pool=new Pool({connectionString:url,options:`-c search_path=${schema},public`,max:5}),repo=new PgRepository(pool);
@@ -27,8 +27,14 @@ test('R3/R4 API real PostgreSQL login, session expiry, atomic receipts and unsup
  const current=await app.inject({url:'/api/v1/profile',headers});assert.deepEqual(current.json(),first.profile);
  await app.close();app=buildApp({profileRepository:new PgRepository(pool),clock:()=>now});
  assert.deepEqual((await app.inject({url:'/api/v1/profile',headers})).json(),first.profile);assert.equal((await app.inject({url:'/api/v1/operations/'+startCommand.operationId,headers})).json().operationId,startCommand.operationId);
- await repo.transaction(accountId,tx=>{tx.run.snapshot={version:'future-incompatible'};});
+ await repo.transaction(accountId,tx=>{tx.run.snapshot={version:'r34.2',runtimeBalance:tx.run.snapshot.runtimeBalance};});
  const damaged=await app.inject({url:'/api/v1/run?clientId='+clientId,headers});assert.equal(damaged.statusCode,200);assert.equal(damaged.json().runId,runId);
  const close=await perform({operationId:randomUUID(),expectedRevision:1,clientId,type:'end_run',payload:{runId,ownerEpoch:1}});assert.equal(close.statusCode,200,close.body);assert.equal(close.json().run,null);assert.equal(close.json().profile.goldMilli,'0');assert.equal(close.json().profile.stats.runs,0);
+ await t.test('legacy NULL-pin future snapshot can be closed without changing permanent property',async()=>{
+  const legacyId=randomUUID(),before=await repo.getProfile(accountId);
+  await repo.transaction(accountId,tx=>{tx.run={runId:legacyId,balanceRevision:null,snapshot:{version:'future-incompatible'},ownerClientId:clientId,ownerEpoch:1,updatedAt:new Date(now).toISOString(),wallAnchorMs:now,simAnchorTime:0,rewardedEnemyIds:[],statsCommitted:false};});
+  const read=await app.inject({url:'/api/v1/run?clientId='+clientId,headers});assert.equal(read.statusCode,200,read.body);assert.equal(read.json().balance.revision,'legacy-r34.1');
+  const result=await perform({operationId:randomUUID(),expectedRevision:before.revision,clientId,type:'end_run',payload:{runId:legacyId,ownerEpoch:1}});assert.equal(result.statusCode,200,result.body);assert.equal(result.json().run,null);assert.equal(result.json().profile.goldMilli,before.goldMilli);assert.deepEqual(result.json().profile.stats,before.stats);
+ });
  const profileBeforeExpiry=await repo.getProfile(accountId);now+=31*24*60*60*1000;assert.equal((await app.inject({url:'/api/v1/profile',headers})).statusCode,401);assert.deepEqual(await repo.getProfile(accountId),profileBeforeExpiry);
 });

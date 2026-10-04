@@ -1329,6 +1329,300 @@
           }
         }
       }
+    },
+    "/api/v1/balance": {
+      "get": {
+        "operationId": "getBalance",
+        "summary": "Preview currently active balance for the next run; no process cache or fallback",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Balance document",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BalanceDocument"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Authentication, authorization, validation, publication conflict or unavailable storage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Authentication, authorization, validation, publication conflict or unavailable storage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Authentication, authorization, validation, publication conflict or unavailable storage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/balance": {
+      "get": {
+        "operationId": "getAdminBalance",
+        "summary": "Read current balance with explicit balance-admin privilege",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Balance document",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BalanceDocument"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Authentication, authorization, validation, publication conflict or unavailable storage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication, authorization, validation, publication conflict or unavailable storage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authentication, authorization, validation, publication conflict or unavailable storage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Authentication, authorization, validation, publication conflict or unavailable storage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Authentication, authorization, validation, publication conflict or unavailable storage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Authentication, authorization, validation, publication conflict or unavailable storage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Authentication, authorization, validation, publication conflict or unavailable storage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Authentication, authorization, validation, publication conflict or unavailable storage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Authentication, authorization, validation, publication conflict or unavailable storage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "publishBalance",
+        "summary": "Atomically publish an immutable typed revision for future runs",
+        "description": "Requires session, exact same-origin JSON request, X-CSRF-Token, and explicit balance-admin privilege. Default accounts have no privilege. Revision conflict (BALANCE_REVISION_CONFLICT) returns 409 without changes; storage failure returns 503 without defaults. Existing runs and operation receipts retain their revision. To restore an earlier balance, publish those values as a new revision.",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-CSRF-Token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublishBalanceRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Balance document",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BalanceDocument"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Authentication, authorization, validation, publication conflict or unavailable storage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication, authorization, validation, publication conflict or unavailable storage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authentication, authorization, validation, publication conflict or unavailable storage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Authentication, authorization, validation, publication conflict or unavailable storage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Authentication, authorization, validation, publication conflict or unavailable storage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Authentication, authorization, validation, publication conflict or unavailable storage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Authentication, authorization, validation, publication conflict or unavailable storage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Authentication, authorization, validation, publication conflict or unavailable storage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Authentication, authorization, validation, publication conflict or unavailable storage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2925,7 +3219,8 @@
           "version": {
             "type": "string",
             "enum": [
-              "r34.1"
+              "r34.1",
+              "r34.2"
             ]
           },
           "state": {
@@ -3178,6 +3473,9 @@
               "bossAt",
               "shopDistanceRemaining"
             ]
+          },
+          "runtimeBalance": {
+            "$ref": "#/components/schemas/SimulationRuntimeBalance"
           }
         },
         "required": [
@@ -3189,7 +3487,8 @@
           "randomState",
           "counters",
           "generator"
-        ]
+        ],
+        "description": "r34.1 legacy snapshots have no runtimeBalance; r34.2 requires runtimeBalance and pins the balance revision through RunView.balance. Server rejects relabeled versions."
       },
       "RunView": {
         "type": "object",
@@ -3242,6 +3541,9 @@
                 "$ref": "#/components/schemas/Components"
               }
             }
+          },
+          "balance": {
+            "$ref": "#/components/schemas/PinnedBalance"
           }
         },
         "required": [
@@ -3250,7 +3552,8 @@
           "ownerEpoch",
           "updatedAt",
           "runId",
-          "loot"
+          "loot",
+          "balance"
         ]
       },
       "OperationResult": {
@@ -3978,6 +4281,512 @@
         "required": [
           "ok"
         ]
+      },
+      "SimulationRuntimeBalance": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "shopMinDistance",
+          "shopMaxDistance",
+          "shopRightProbability",
+          "shooterChanceStart",
+          "shooterChanceMax",
+          "shooterChanceRampSeconds",
+          "slowDurationSeconds",
+          "slowSpeedMultiplier",
+          "collectorKills",
+          "collectorGoldMultiplierMilli"
+        ],
+        "properties": {
+          "shopMinDistance": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 100000
+          },
+          "shopMaxDistance": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 100000
+          },
+          "shopRightProbability": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "shooterChanceStart": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "shooterChanceMax": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "shooterChanceRampSeconds": {
+            "type": "number",
+            "minimum": 0.01,
+            "maximum": 100000
+          },
+          "slowDurationSeconds": {
+            "type": "number",
+            "minimum": 0.1,
+            "maximum": 30
+          },
+          "slowSpeedMultiplier": {
+            "type": "number",
+            "minimum": 0.1,
+            "maximum": 1
+          },
+          "collectorKills": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "collectorGoldMultiplierMilli": {
+            "type": "integer",
+            "minimum": 1000,
+            "maximum": 2000
+          }
+        }
+      },
+      "RewardCatalog": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "version",
+          "components",
+          "rewards"
+        ],
+        "properties": {
+          "version": {
+            "type": "string"
+          },
+          "components": {
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 3,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "label"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "enum": [
+                    "steel",
+                    "ember",
+                    "core"
+                  ]
+                },
+                "label": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "rewards": {
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 3,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "kind",
+                "baseGoldMilli",
+                "commonDrops",
+                "coreDrops",
+                "steelProbability"
+              ],
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "normal",
+                    "strong",
+                    "boss"
+                  ]
+                },
+                "baseGoldMilli": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,18})$",
+                  "description": "Nonnegative integer milli-gold, max 9223372036854775807; 1000 = 1 gold."
+                },
+                "commonDrops": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 2
+                },
+                "coreDrops": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "steelProbability": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              }
+            }
+          }
+        }
+      },
+      "CompiledBalance": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "config",
+          "shopZone",
+          "equipment",
+          "rewards",
+          "baseModifiers"
+        ],
+        "properties": {
+          "config": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "heroSpeed",
+              "lateralSpeed",
+              "heroRadius",
+              "lateralLimit",
+              "enemySpeed",
+              "enemyRadius",
+              "breachOffset",
+              "spawnDistance",
+              "spawnMinSeconds",
+              "spawnMaxSeconds",
+              "maxEnemies",
+              "spawning",
+              "hookRange",
+              "hookOutboundSpeed",
+              "hookReturnSpeed",
+              "hookCooldown",
+              "hookRadius",
+              "strongRadius",
+              "bossRadius",
+              "bossEnemySpeed",
+              "bossRequiredHits",
+              "projectileRadius",
+              "projectileSpeed",
+              "projectileLifetime",
+              "shooterTelegraph",
+              "shooterInterval",
+              "bossTelegraph",
+              "bossInterval",
+              "bossVolleyDegrees",
+              "maxShooters",
+              "maxBosses",
+              "maxProjectiles",
+              "shooterUnlockSeconds",
+              "bossFirstSeconds",
+              "bossMinKills",
+              "bossMinInterval",
+              "bossMaxInterval",
+              "shopMinInterval",
+              "shopMaxInterval",
+              "spawnSafetySeconds",
+              "spawnRetrySeconds"
+            ],
+            "properties": {
+              "heroSpeed": {
+                "type": "number"
+              },
+              "lateralSpeed": {
+                "type": "number"
+              },
+              "heroRadius": {
+                "type": "number"
+              },
+              "lateralLimit": {
+                "type": "number"
+              },
+              "enemySpeed": {
+                "type": "number"
+              },
+              "enemyRadius": {
+                "type": "number"
+              },
+              "breachOffset": {
+                "type": "number"
+              },
+              "spawnDistance": {
+                "type": "number"
+              },
+              "spawnMinSeconds": {
+                "type": "number"
+              },
+              "spawnMaxSeconds": {
+                "type": "number"
+              },
+              "maxEnemies": {
+                "type": "number"
+              },
+              "spawning": {
+                "type": "boolean"
+              },
+              "hookRange": {
+                "type": "number"
+              },
+              "hookOutboundSpeed": {
+                "type": "number"
+              },
+              "hookReturnSpeed": {
+                "type": "number"
+              },
+              "hookCooldown": {
+                "type": "number"
+              },
+              "hookRadius": {
+                "type": "number"
+              },
+              "strongRadius": {
+                "type": "number"
+              },
+              "bossRadius": {
+                "type": "number"
+              },
+              "bossEnemySpeed": {
+                "type": "number"
+              },
+              "bossRequiredHits": {
+                "type": "number"
+              },
+              "projectileRadius": {
+                "type": "number"
+              },
+              "projectileSpeed": {
+                "type": "number"
+              },
+              "projectileLifetime": {
+                "type": "number"
+              },
+              "shooterTelegraph": {
+                "type": "number"
+              },
+              "shooterInterval": {
+                "type": "number"
+              },
+              "bossTelegraph": {
+                "type": "number"
+              },
+              "bossInterval": {
+                "type": "number"
+              },
+              "bossVolleyDegrees": {
+                "type": "number"
+              },
+              "maxShooters": {
+                "type": "number"
+              },
+              "maxBosses": {
+                "type": "number"
+              },
+              "maxProjectiles": {
+                "type": "number"
+              },
+              "shooterUnlockSeconds": {
+                "type": "number"
+              },
+              "bossFirstSeconds": {
+                "type": "number"
+              },
+              "bossMinKills": {
+                "type": "number"
+              },
+              "bossMinInterval": {
+                "type": "number"
+              },
+              "bossMaxInterval": {
+                "type": "number"
+              },
+              "shopMinInterval": {
+                "type": "number"
+              },
+              "shopMaxInterval": {
+                "type": "number"
+              },
+              "spawnSafetySeconds": {
+                "type": "number"
+              },
+              "spawnRetrySeconds": {
+                "type": "number"
+              }
+            }
+          },
+          "shopZone": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "lateralRadius",
+              "longitudinalRadius"
+            ],
+            "properties": {
+              "lateralRadius": {
+                "type": "number"
+              },
+              "longitudinalRadius": {
+                "type": "number"
+              }
+            }
+          },
+          "equipment": {
+            "$ref": "#/components/schemas/EquipmentCatalog"
+          },
+          "rewards": {
+            "$ref": "#/components/schemas/RewardCatalog"
+          },
+          "baseModifiers": {
+            "$ref": "#/components/schemas/EquipmentModifiers"
+          },
+          "runtime": {
+            "$ref": "#/components/schemas/SimulationRuntimeBalance"
+          }
+        }
+      },
+      "PinnedBalance": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "revision",
+          "compiled"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "string",
+            "enum": [
+              "runner-balance.1"
+            ]
+          },
+          "revision": {
+            "type": "string",
+            "pattern": "^(legacy-r34[.]1|[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$"
+          },
+          "compiled": {
+            "$ref": "#/components/schemas/CompiledBalance"
+          }
+        },
+        "description": "Immutable balance selected at start_run. Legacy saved runs use legacy-r34.1 and no compiled.runtime; r34.2 runs use a published UUID revision and compiled.runtime."
+      },
+      "BalanceParameter": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "key",
+          "label",
+          "group",
+          "unit",
+          "type"
+        ],
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "group": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "number",
+              "integer",
+              "boolean",
+              "goldMilli"
+            ]
+          },
+          "min": {
+            "type": "number"
+          },
+          "max": {
+            "type": "number"
+          },
+          "step": {
+            "type": "number"
+          }
+        }
+      },
+      "BalanceValues": {
+        "type": "object",
+        "additionalProperties": {
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,18})$"
+            }
+          ]
+        },
+        "description": "Complete closed parameter keyset from BalanceDocument.parameters; server rejects missing/unknown keys and cross-field inconsistencies. GoldMilli values are decimal strings, never JS numbers."
+      },
+      "BalanceDocument": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schemaVersion",
+          "revision",
+          "compiled",
+          "values",
+          "parameters"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "type": "string",
+            "enum": [
+              "runner-balance.1"
+            ]
+          },
+          "revision": {
+            "type": "string",
+            "pattern": "^(legacy-r34[.]1|[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$"
+          },
+          "compiled": {
+            "$ref": "#/components/schemas/CompiledBalance"
+          },
+          "values": {
+            "$ref": "#/components/schemas/BalanceValues"
+          },
+          "parameters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BalanceParameter"
+            }
+          }
+        },
+        "description": "Immutable balance selected at start_run. Legacy saved runs use legacy-r34.1 and no compiled.runtime; r34.2 runs use a published UUID revision and compiled.runtime."
+      },
+      "PublishBalanceRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "expectedRevision",
+          "values"
+        ],
+        "properties": {
+          "expectedRevision": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "values": {
+            "$ref": "#/components/schemas/BalanceValues"
+          }
+        }
       }
     }
   },

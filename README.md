@@ -38,3 +38,20 @@ CI проверяет настоящую БД, повтор миграции, ru
 
 Соответствующая часть второй игры находится в [games/syezzhaem](games/syezzhaem/README.md). Это отдельный Node.js-проект; команды и контейнер первой игры в корне сохраняются. Размещение кода в репозитории не устанавливает игру на VPS.
 
+
+## Runtime Runner balance
+
+`GET /api/v1/balance` previews the active balance for the next run. The separate frontend `/admin/balance/` editor uses authenticated `GET` / `PUT /api/v1/admin/balance`; a PUT supplies the complete `values` map and `expectedRevision`. Existing sessions, same-origin JSON and `X-CSRF-Token` are required. An account also needs an explicit `balance-admin` privilege; no account receives it automatically.
+
+After a one-time paired frontend/backend installation and additive migration `005-balance.sql`, balance publication needs no rebuild or process restart. All 157 supported scalar combat, shop, equipment, recipe, consumable and reward settings live as typed constructor parameters in immutable revisions. One pointer changes atomically; stale publication returns 409 and unavailable/corrupt storage returns 503. New runs pin the selected revision, including shop prices, reward tables and consumable effects. Existing and saved runs retain their rules after publication, pause, restore and process restart. Legacy `r34.1` runs and historical receipts retain the original economy and shop schedule; new `r34.2` snapshots carry the selected runtime settings. Shops initially appear after each 250 metres of forward progress; the merchant still appears ahead by `spawnDistance` (36 metres initially).
+
+Use the migration owner to assign or revoke the chosen existing account's privilege, after building the backend:
+
+```sh
+npm run balance:admin -- grant ACCOUNT_UUID
+npm run balance:admin -- revoke ACCOUNT_UUID
+```
+
+Set exactly one of `DATABASE_URL` or `DATABASE_URL_FILE`; keep the owner connection out of the running app. The runtime role cannot grant itself this privilege. Apply the updated `src/profile/runtime-grants.sql` after migration. Compose installations can override the existing migration service command with `node dist/balance/admin-cli.js grant ACCOUNT_UUID`, reusing its protected owner URL file. No account has been assigned by this change.
+
+Drain old backend writers before the initial migration and install the matching frontend/backend pair. The database writer protocol blocks old app mutations of run rows; this compatibility guard is not an authorization mechanism. Do not roll back to an old image after adopting the new run format without a compatible restoration plan. To undo a balance change, publish the previous values as a new revision; existing runs keep their original pin. This repository change has not been deployed to a server.

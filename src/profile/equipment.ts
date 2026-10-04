@@ -179,10 +179,10 @@ export function validateProfile(input: unknown, catalog: EquipmentCatalog = EQUI
   return structuredClone(input) as unknown as Profile;
 }
 /** Starts from base for every call. Owned but unequipped items have no effect. */
-export function computeModifiers(profile: Profile, catalog: EquipmentCatalog = EQUIPMENT_CATALOG): Readonly<EquipmentModifiers> {
+export function computeModifiers(profile: Profile, catalog: EquipmentCatalog = EQUIPMENT_CATALOG, base: Readonly<EquipmentModifiers> = BASE_MODIFIERS): Readonly<EquipmentModifiers> {
   validateProfile(profile, catalog);
-  let rangeMultiplier = 1, outboundSpeedMultiplier = 1, returnSpeedMultiplier = 1, cooldown = BASE_MODIFIERS.cooldown;
-  let lateralSpeedMultiplier = 1, pierceTargets = 1, returnHitTargets = 0, goldMultiplierMilli = 1000;
+  let rangeMultiplier = base.rangeMultiplier, outboundSpeedMultiplier = base.outboundSpeedMultiplier, returnSpeedMultiplier = base.returnSpeedMultiplier, cooldown = base.cooldown;
+  let lateralSpeedMultiplier = base.lateralSpeedMultiplier, pierceTargets = base.pierceTargets, returnHitTargets = base.returnHitTargets, goldMultiplierMilli = base.goldMultiplierMilli;
   for (const slot of EQUIPMENT_SLOTS) {
     const instanceId = profile.loadouts.pudge[slot];
     if (instanceId === null) continue;
