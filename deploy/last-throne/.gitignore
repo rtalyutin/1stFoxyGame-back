@@ -1,0 +1,8 @@
+.workspaces/
+.prepared/
+.test-work/
+.td-assembling-*/
+.td-preparing-*/
+node_modules/
+.env
+*.env

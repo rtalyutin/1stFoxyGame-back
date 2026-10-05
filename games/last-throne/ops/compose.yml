@@ -1,0 +1,59 @@
+name: last-throne
+services:
+  runtime:
+    image: last-throne-runtime:r2
+    build:
+      context: ..
+      dockerfile: ops/Dockerfile
+      args:
+        NODE_IMAGE: ${TD_NODE_IMAGE:?Set exact Node 24 image with sha256 digest}
+    restart: unless-stopped
+    read_only: true
+    user: "10001:10001"
+    ports:
+      - "127.0.0.1:${TD_GATEWAY_HOST_PORT:?Choose unused loopback port}:4100"
+    volumes:
+      - ${TD_RELEASES_DIR:-/opt/last-throne/releases}:/releases:ro
+      - ${TD_STATE_DIR:-/opt/last-throne/state}:/state
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    environment:
+      DATABASE_URL: ${TD_DATABASE_URL:?Set dedicated application database URL}
+      DATABASE_MIGRATION_URL: ${TD_DATABASE_MIGRATION_URL:?Set controlled migration database URL}
+      PGPOOL_MAX: ${TD_PG_POOL_MAX:?Set measured per-process pool limit}
+      PUBLIC_ORIGIN: ${TD_PUBLIC_ORIGIN:-}
+    mem_limit: ${TD_RUNTIME_MEMORY_LIMIT:?Set measured runtime A+B memory limit}
+    cpus: ${TD_RUNTIME_CPU_LIMIT:?Set measured runtime CPU limit}
+    pids_limit: 128
+    stop_grace_period: 60s
+    depends_on:
+      postgres:
+        condition: service_healthy
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+  postgres:
+    image: ${TD_POSTGRES_IMAGE:?Set PostgreSQL image with exact tag and digest}
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: last_throne
+      POSTGRES_USER: last_throne_migrator
+      POSTGRES_PASSWORD: ${TD_POSTGRES_PASSWORD:?Set unique database password}
+    volumes:
+      - last_throne_pgdata:/var/lib/postgresql/data
+    mem_limit: ${TD_PG_MEMORY_LIMIT:?Set measured PostgreSQL memory limit}
+    cpus: ${TD_PG_CPU_LIMIT:?Set measured PostgreSQL CPU limit}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U last_throne_migrator -d last_throne"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+volumes:
+  last_throne_pgdata:

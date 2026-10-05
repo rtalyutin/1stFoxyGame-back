@@ -1,0 +1,13 @@
+import pg from 'pg';
+import { createApp } from './app.mjs';
+const port = Number(process.env.PORT || 3101);
+if(!Number.isInteger(port) || port<1 || port>65535) throw new Error('Invalid PORT');
+if(!process.env.DATABASE_URL || !process.env.RELEASES_DIR || !process.env.RELEASE_ID) throw new Error('DATABASE_URL, RELEASES_DIR and RELEASE_ID are required');
+const poolMax=Number(process.env.PGPOOL_MAX || 4);
+if(!Number.isInteger(poolMax)||poolMax<1||poolMax>20)throw new Error('PGPOOL_MAX must be 1..20');
+const pool = new pg.Pool({connectionString:process.env.DATABASE_URL,max:poolMax,connectionTimeoutMillis:5000,idleTimeoutMillis:10000,statement_timeout:10000,lock_timeout:5000,query_timeout:12000,application_name:`last-throne:${process.env.RELEASE_ID}`});
+pool.on('error',err=>console.error('Database connection error:',err.code || 'UNKNOWN'));
+const app=await createApp({pool,releasesDir:process.env.RELEASES_DIR,releaseId:process.env.RELEASE_ID,logger:true,publicOrigin:process.env.PUBLIC_ORIGIN});
+app.addHook('onClose',()=>pool.end());
+for(const signal of ['SIGTERM','SIGINT']) process.once(signal,async()=>{await app.close();});
+await app.listen({port,host:'127.0.0.1'});
