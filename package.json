@@ -10,7 +10,7 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "npm run build && node --test test/*.test.mjs",
+    "test": "npm run build && node --test test/*.test.mjs && npm run td:integration",
     "start": "node dist/server.js",
     "validate:content": "npm run build && node dist/game/validate-content-cli.js && node dist/db/content-generate-cli.js && node dist/db/economy-generate-cli.js && node dist/balance/generate-cli.js",
     "content:generate": "npm run build && node dist/db/content-generate-cli.js --write",
@@ -21,7 +21,8 @@
     "account:password": "node dist/profile/password-cli.js",
     "economy:generate": "npm run build && node dist/db/economy-generate-cli.js --write",
     "balance:admin": "node dist/balance/admin-cli.js",
-    "balance:generate": "npm run build && node dist/balance/generate-cli.js"
+    "balance:generate": "npm run build && node dist/balance/generate-cli.js",
+    "td:integration": "node --test deploy/last-throne/tests/wrappers.node.mjs"
   },
   "dependencies": {
     "fastify": "5.12.5",

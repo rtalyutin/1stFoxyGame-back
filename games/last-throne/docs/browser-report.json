@@ -1,0 +1,17 @@
+{
+  "environment": "Chromium / development embedded PostgreSQL",
+  "checks": [
+    "launcher selects immutable URL; real API/EAV connected",
+    "rune ring actually moves; reduced-motion disables animation",
+    "API failure displays retryable error",
+    "retry restores actual API/content connection",
+    "390px layout has no horizontal overflow",
+    "launcher missing pointer/unavailable release remain retryable",
+    "launcher retry after unavailable release opens real current release"
+  ],
+  "pageErrors": [],
+  "releaseId": "r0-002",
+  "sourceHash": "62ab2127e3c88f1d76b530beb9e7d4e34b44a1df531b07d748a9573290e6227a",
+  "browserVersion": "153.0.8010.0",
+  "status": "PASS"
+}

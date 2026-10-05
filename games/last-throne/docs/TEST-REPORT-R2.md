@@ -1,0 +1,20 @@
+# Проверка R2 — 4 октября 2026
+
+Объект: immutable `releases/r2-001`,2279файлов. SourceHash `b4cb38f2477b406608f648cb72e5c1c68a4aed8fd4f3fa84a88637e70d4b9bf8`; manifestSHA256 `dafc60169b772214823799f89fc623d3b4f1f02ab0e69710f57e6ee57aa54dbf`. Web `r2-web-cf9847f563bf04b1`, API `r2-api-058b93c6ed7eec48`, core/content/meta R2-1,save3/API1. Retained r0-002/r1-002 сверены по полному инвентарю, прежние core/SQL001–004 неизменны. Контракт `r2/1`, schema FEATURE_HANDOFF/1 digest `aa1cfed01fce21493e11f57235c6efa1f4b4895bb2b1c9b571ae0683956f3750`.
+
+| Проверка | Наблюдаемый итог | Evidence/граница |
+|---|---|---|
+| Строгий TypeScript | PASS | evidence/final-r2/typecheck.log |
+| Общий Node test |163случая,162PASS,0FAIL,1SKIP | evidence/final-r2/unit.log; Unixsocket bind запрещён стендом. Включены независимые13core/HTTP случая; не складывать их повторно в новый общий total |
+| Авторский браузер |19PASS,0ошибок | evidence/browser-r2-final/report.json; настоящий Chromium153.0.8010.0/SwiftShader/WebGL2, native clock |
+| Независимый browser |31PASS | evidence/qa-r2/browser/report.json; десять волн только UI-командами, все3командир→Rubick→применение, offlineA→C/reload/sync,terminal/conflict/context/visibility. Время ожидания ускорено адаптером кадров и не является benchmark |
+| Старый R1 |2PASS | evidence/qa-r2/compat-browser/report.json; реальный R1 клиент/save2 через R2 API, менюR2→exactR1 с прежними pins/2heroes/5waves |
+| Низкая графика |2PASS | evidence/qa-r2/low-browser/report.json; реальные зомби/надгробие/slow и существенная геометрия, возврат high |
+| Renderer/движение |16PASS,0ошибок | evidence/renderer-r2/report-2026-10-04T20-13-34-559Z-pass.json; actualeventId и один mesh.uniqueId до/после, движения лечения/удара/щита, кража/призывы/TTL/cleanup/loss. Явные изолированные enemyfixtures; не естественная партия |
+| Полная чистая партия |10волн/victory/240HP/4592такта/71команда | tests/core-r2-party-proof.test.mjs; defaultcontent/seed0x12345678, только submitCommand/advanceTicks; replay30/7 совпал по событиям,границам,журналу,итогу |
+| EAV/API/права |39авторских SQL/HTTP случаевPASS | docs/API-R2.md,docs/DB-R2.md; preexistingR1 до005/006, поколения save3,nullable-slot/cooldowns/priority,owner/revision/idem/terminal/role. PGlite сериализует одну сессию; не multi-session PostgreSQL |
+| Delivery |31PASS,1UnixSKIP,0FAIL | tests/delivery-r2.test.mjs и delivery regressions в общем unit.log; фактический Nodegateway/A-B с fixtures,PID/rollback/oldpins/contentpublisher. Не реальный VPS/Docker/Nginx |
+
+Исправлены наблюдатели тестов, их исходы сохранены. Early legacy-countFAIL ожидал4миграции после добавления005/006: исправлено ожидание6, прежние checksum/смыслы проверены. Первый finalbrowser ожидал5карточек в момент graphics.ready до завершения mountUI; добавлено ожидание реальной первой карточки, rawFAIL сохранён в evidence/browser-r2-final-ui-ready-race. Независимый R1-compat fixture ожидал отсутствующую в R1 новую кнопку overview: исправлен только observer и выполнен новый PASS. Дополнительный identity observer ошибочно сравнил исходный web/index.html с результатом Vite как rawcopy; ограничен 50 настоящими runtime-копиями, исходный FAIL сохранён и повтор дал PASS. Renderer сначала сравнивал разные экземпляры одного семейства эффекта; окончательная проверка фиксирует mesh.uniqueId. Его первые полные reports были перезаписаны прежней фикстурой: это ограничение явно записано в GRAPHICS-R2.md, доступны исторические наблюдаемые receipts; новые per-run files неизменяемы. Ошибка bare-import в тестовом HTML также относится к fixture. Ни одна прежняя FAIL-запись не объявляется PASS задним числом.
+
+Не проверены VPS/первая игра до-после, реальные Docker/Nginx/TLS/container identity/Unix-control, capacity/backup-restore, независимые PostgreSQL-сессии, аппаратный GPU/CPU/FPS, человеческие A02/A21 и субъективная графическая приёмка. Локальный технический gate PASS относится только к названным сценариям и версии. Установка NOT_EXECUTED; релизы R3/R4 не реализованы.

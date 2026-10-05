@@ -1,0 +1,31 @@
+{
+  "name": "last-throne",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test tests/*.test.mjs",
+    "build": "node scripts/build.mjs",
+    "migrate": "node scripts/migrate.mjs",
+    "start": "node ops/supervisor.mjs",
+    "test:browser": "node tests/browser-r2.mjs",
+    "test:browser:r0": "node tests/browser-smoke.mjs",
+    "test:browser:r1": "node tests/browser-r1.mjs"
+  },
+  "dependencies": {
+    "fastify": "5.12.5",
+    "pg": "8.23.1"
+  },
+  "devDependencies": {
+    "@babylonjs/core": "9.29.0",
+    "@electric-sql/pglite": "0.5.8",
+    "playwright": "1.62.1",
+    "typescript": "7.0.2",
+    "vite": "8.3.2"
+  }
+}

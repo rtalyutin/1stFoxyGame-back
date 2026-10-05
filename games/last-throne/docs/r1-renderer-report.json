@@ -1,0 +1,442 @@
+{
+  "errors": [],
+  "checks": [
+    "North pad projects above south pad: screenY277.19 <587.91; map road flow remains left to right",
+    "WebGL2 shaders ready; round hero anchors, square foundations, procedural heroes, ballista, magic tower, ghost preview rendered",
+    "real core events produce hook chain, sequential serpents, teleporter circles and columns; selected ghost and range coexist",
+    "low quality retains essential scene and reduces actual DPR2 buffer from cap1.5 to1",
+    "controlled WebGL context loss callback and Babylon restoration preserve scene",
+    "Actual pointer picks distinguish building pad-s3 from round anchor-s1 with correct simulation Y sign",
+    "Lethal hook victim moves across two real scene renders despite core death; all effect points use the same unitPos/worldZ transform"
+  ],
+  "contextStates": [
+    {
+      "state": "lost",
+      "message": "Графический контекст потерян. Партия приостановлена; ждём восстановления браузером."
+    },
+    {
+      "state": "restored"
+    }
+  ],
+  "orientation": {
+    "north": {
+      "x": 461.1990197499593,
+      "y": 277.19335746765137
+    },
+    "south": {
+      "x": 476.8163204193115,
+      "y": 587.9108867645264
+    }
+  },
+  "padPick": {
+    "kind": "pad",
+    "id": "pad-s3",
+    "x": 350,
+    "y": 512
+  },
+  "anchorPick": {
+    "kind": "anchor",
+    "id": "anchor-s1",
+    "x": -260,
+    "y": 575
+  },
+  "browserVersion": "153.0.8010.0",
+  "initial": {
+    "renderer": "Babylon.js 9.29.0 / WebGL",
+    "coordinates": "simulation X→+X; simulation Y→−Z; map.scale",
+    "webGLVersion": 2,
+    "contextLost": false,
+    "disposed": false,
+    "quality": "high",
+    "pixelRatioCap": 1.5,
+    "cssWidth": 1440,
+    "cssHeight": 850,
+    "drawingBufferWidth": 2160,
+    "drawingBufferHeight": 1275,
+    "meshes": 354,
+    "materials": 20,
+    "actors": 2,
+    "effects": 0,
+    "seenEvents": 0,
+    "limits": {
+      "maxTextureSize": 8192,
+      "maxRenderbufferSize": 8192,
+      "maxViewportDimensions": [
+        8192,
+        8192
+      ]
+    },
+    "glInfo": {
+      "vendor": "Google Inc. (Google)",
+      "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)"
+    },
+    "ready": true,
+    "actorKinds": [
+      "hero:pudge:1",
+      "hero:shaman:1"
+    ],
+    "visualEventCounts": {},
+    "pullingActors": [],
+    "islandWidth": 24
+  },
+  "casts": [
+    {
+      "commandId": "probe-5",
+      "status": "queued",
+      "code": "QUEUED",
+      "tick": 102
+    },
+    {
+      "commandId": "probe-6",
+      "status": "queued",
+      "code": "QUEUED",
+      "tick": 102
+    }
+  ],
+  "midCast": {
+    "renderer": "Babylon.js 9.29.0 / WebGL",
+    "coordinates": "simulation X→+X; simulation Y→−Z; map.scale",
+    "webGLVersion": 2,
+    "contextLost": false,
+    "disposed": false,
+    "quality": "low",
+    "pixelRatioCap": 1,
+    "cssWidth": 1440,
+    "cssHeight": 850,
+    "drawingBufferWidth": 1440,
+    "drawingBufferHeight": 850,
+    "meshes": 446,
+    "materials": 23,
+    "actors": 10,
+    "effects": 3,
+    "seenEvents": 25,
+    "limits": {
+      "maxTextureSize": 8192,
+      "maxRenderbufferSize": 8192,
+      "maxViewportDimensions": [
+        8192,
+        8192
+      ]
+    },
+    "glInfo": {
+      "vendor": "Google Inc. (Google)",
+      "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)"
+    },
+    "ready": true,
+    "actorKinds": [
+      "hero:pudge:1",
+      "hero:shaman:1",
+      "building:ballista:1",
+      "building:magic_tower:1",
+      "enemy:melee:1",
+      "enemy:melee:1",
+      "enemy:melee:1",
+      "enemy:melee:1",
+      "enemy:melee:1",
+      "enemy:melee:1"
+    ],
+    "visualEventCounts": {
+      "construction": 2,
+      "building_ready": 2,
+      "ballista_shot": 3,
+      "hook_cast": 1,
+      "snakes_cast": 1
+    },
+    "pullingActors": [],
+    "islandWidth": 24
+  },
+  "hookMotion": {
+    "before": {
+      "id": "enemy-1-w1-l1-000",
+      "x": -6.58,
+      "z": 0,
+      "from": {
+        "x": -658,
+        "y": 0
+      },
+      "to": {
+        "x": -200,
+        "y": 0
+      },
+      "progress": 0
+    },
+    "after": {
+      "id": "enemy-1-w1-l1-000",
+      "x": -6.103680000000003,
+      "z": 0,
+      "from": {
+        "x": -658,
+        "y": 0
+      },
+      "to": {
+        "x": -200,
+        "y": 0
+      },
+      "progress": 0.1999999999999993
+    }
+  },
+  "teleport": {
+    "renderer": "Babylon.js 9.29.0 / WebGL",
+    "coordinates": "simulation X→+X; simulation Y→−Z; map.scale",
+    "webGLVersion": 2,
+    "contextLost": false,
+    "disposed": false,
+    "quality": "low",
+    "pixelRatioCap": 1,
+    "cssWidth": 1440,
+    "cssHeight": 850,
+    "drawingBufferWidth": 1440,
+    "drawingBufferHeight": 850,
+    "meshes": 480,
+    "materials": 21,
+    "actors": 18,
+    "effects": 1,
+    "seenEvents": 47,
+    "limits": {
+      "maxTextureSize": 8192,
+      "maxRenderbufferSize": 8192,
+      "maxViewportDimensions": [
+        8192,
+        8192
+      ]
+    },
+    "glInfo": {
+      "vendor": "Google Inc. (Google)",
+      "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)"
+    },
+    "ready": true,
+    "actorKinds": [
+      "hero:pudge:1",
+      "hero:shaman:1",
+      "building:ballista:1",
+      "building:magic_tower:1",
+      "enemy:melee:1",
+      "enemy:melee:1",
+      "enemy:melee:1",
+      "enemy:melee:1",
+      "enemy:melee:1",
+      "enemy:melee:1",
+      "ground::1",
+      "ground::1",
+      "ground::1",
+      "ground::1",
+      "enemy:melee:1",
+      "enemy:melee:1",
+      "enemy:melee:1",
+      "enemy:melee:1"
+    ],
+    "visualEventCounts": {
+      "construction": 2,
+      "building_ready": 2,
+      "ballista_shot": 8,
+      "hook_cast": 1,
+      "snakes_cast": 1,
+      "hook_pull": 1,
+      "pudge_attack": 1,
+      "chain_lightning": 2,
+      "unit_died": 1,
+      "snake_rise": 4,
+      "teleport_start": 1
+    },
+    "pullingActors": [],
+    "islandWidth": 24
+  },
+  "low": {
+    "renderer": "Babylon.js 9.29.0 / WebGL",
+    "coordinates": "simulation X→+X; simulation Y→−Z; map.scale",
+    "webGLVersion": 2,
+    "contextLost": false,
+    "disposed": false,
+    "quality": "low",
+    "pixelRatioCap": 1,
+    "cssWidth": 1440,
+    "cssHeight": 850,
+    "drawingBufferWidth": 1440,
+    "drawingBufferHeight": 850,
+    "meshes": 480,
+    "materials": 21,
+    "actors": 18,
+    "effects": 1,
+    "seenEvents": 60,
+    "limits": {
+      "maxTextureSize": 8192,
+      "maxRenderbufferSize": 8192,
+      "maxViewportDimensions": [
+        8192,
+        8192
+      ]
+    },
+    "glInfo": {
+      "vendor": "Google Inc. (Google)",
+      "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)"
+    },
+    "ready": true,
+    "actorKinds": [
+      "hero:pudge:1",
+      "hero:shaman:1",
+      "building:ballista:1",
+      "building:magic_tower:1",
+      "enemy:melee:1",
+      "enemy:melee:1",
+      "enemy:melee:1",
+      "enemy:melee:1",
+      "enemy:melee:1",
+      "ground::1",
+      "ground::1",
+      "ground::1",
+      "ground::1",
+      "enemy:melee:1",
+      "enemy:melee:1",
+      "enemy:melee:1",
+      "enemy:melee:1",
+      "enemy:melee:1"
+    ],
+    "visualEventCounts": {
+      "construction": 2,
+      "building_ready": 2,
+      "ballista_shot": 12,
+      "hook_cast": 1,
+      "snakes_cast": 1,
+      "hook_pull": 1,
+      "pudge_attack": 1,
+      "chain_lightning": 4,
+      "unit_died": 2,
+      "snake_rise": 4,
+      "teleport_start": 1,
+      "snake_bolt": 4
+    },
+    "pullingActors": [],
+    "islandWidth": 24
+  },
+  "restored": {
+    "renderer": "Babylon.js 9.29.0 / WebGL",
+    "coordinates": "simulation X→+X; simulation Y→−Z; map.scale",
+    "webGLVersion": 2,
+    "contextLost": false,
+    "disposed": false,
+    "quality": "low",
+    "pixelRatioCap": 1,
+    "cssWidth": 1440,
+    "cssHeight": 850,
+    "drawingBufferWidth": 1440,
+    "drawingBufferHeight": 850,
+    "meshes": 473,
+    "materials": 23,
+    "actors": 17,
+    "effects": 3,
+    "seenEvents": 65,
+    "limits": {
+      "maxTextureSize": 8192,
+      "maxRenderbufferSize": 8192,
+      "maxViewportDimensions": [
+        8192,
+        8192
+      ]
+    },
+    "glInfo": {
+      "vendor": "Google Inc. (Google)",
+      "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)"
+    },
+    "ready": true,
+    "actorKinds": [
+      "hero:pudge:1",
+      "hero:shaman:1",
+      "building:ballista:1",
+      "building:magic_tower:1",
+      "enemy:melee:1",
+      "enemy:melee:1",
+      "enemy:melee:1",
+      "enemy:melee:1",
+      "ground::1",
+      "ground::1",
+      "ground::1",
+      "ground::1",
+      "enemy:melee:1",
+      "enemy:melee:1",
+      "enemy:melee:1",
+      "enemy:melee:1",
+      "enemy:melee:1"
+    ],
+    "visualEventCounts": {
+      "construction": 2,
+      "building_ready": 2,
+      "ballista_shot": 13,
+      "hook_cast": 1,
+      "snakes_cast": 1,
+      "hook_pull": 1,
+      "pudge_attack": 1,
+      "chain_lightning": 6,
+      "unit_died": 3,
+      "snake_rise": 4,
+      "teleport_start": 1,
+      "snake_bolt": 4
+    },
+    "pullingActors": [],
+    "islandWidth": 24
+  },
+  "disposed": {
+    "renderer": "Babylon.js 9.29.0 / WebGL",
+    "coordinates": "simulation X→+X; simulation Y→−Z; map.scale",
+    "webGLVersion": 2,
+    "contextLost": false,
+    "disposed": true,
+    "quality": "low",
+    "pixelRatioCap": 1,
+    "cssWidth": 1440,
+    "cssHeight": 850,
+    "drawingBufferWidth": 1440,
+    "drawingBufferHeight": 850,
+    "meshes": 0,
+    "materials": 0,
+    "actors": 0,
+    "effects": 0,
+    "seenEvents": 0,
+    "limits": {
+      "maxTextureSize": 8192,
+      "maxRenderbufferSize": 8192,
+      "maxViewportDimensions": [
+        8192,
+        8192
+      ]
+    },
+    "glInfo": {
+      "vendor": "Google Inc. (Google)",
+      "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)"
+    },
+    "ready": false,
+    "actorKinds": [],
+    "visualEventCounts": {
+      "construction": 2,
+      "building_ready": 2,
+      "ballista_shot": 13,
+      "hook_cast": 1,
+      "snakes_cast": 1,
+      "hook_pull": 1,
+      "pudge_attack": 1,
+      "chain_lightning": 6,
+      "unit_died": 3,
+      "snake_rise": 4,
+      "teleport_start": 1,
+      "snake_bolt": 4
+    },
+    "pullingActors": [],
+    "islandWidth": 24
+  },
+  "status": "PASS",
+  "rendererSourceHash": "97a5acb2ca73460a6dbcc0388c9ff3fa2e7a89c3549cda2dd562919d65f58801",
+  "verifiedAt": "2026-10-04T11:52:38.133Z",
+  "method": "Temporary standalone Vite HTML harness, real r1-core-1 commands, Babylon WebGL2; Chromium153 SwiftShader",
+  "artRevision": "r1-art-1",
+  "coordinateMapping": "simulation X → world +X; simulation Y → world −Z; multiplication by content.map.scale; picking uses exact inverse",
+  "limitsOfEvidence": [
+    "Standalone renderer probe, not integrated release browser/API acceptance",
+    "Headless software WebGL2; no physical GPU or FPS claim",
+    "No player aesthetic feedback"
+  ]
+}
