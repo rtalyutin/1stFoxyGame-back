@@ -1,0 +1,87 @@
+name: Last Throne R3 pair
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  merge_group:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: td-r3-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pair:
+    name: Last Throne paired source and PostgreSQL17
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17-bookworm@sha256:3645570cccdfa447589da9f57dd740faa29b30938e861289a5574b6ca6b03826
+        env:
+          POSTGRES_USER: td_ci
+          POSTGRES_PASSWORD: td_ci_ephemeral_only
+          POSTGRES_DB: td_db
+        ports:
+          - 5432/tcp
+        options: >-
+          --health-cmd "pg_isready -U td_ci -d td_db"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    steps:
+      - name: Checkout backend revision
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          path: back
+          persist-credentials: false
+      - name: Checkout exact paired frontend
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          repository: rtalyutin/1stFoxyGame-front
+          ref: 473a74b024f537c84b3a7a9607f4afea8189c895
+          path: front
+          persist-credentials: false
+      - name: Set up exact Node24
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: 24.19.0
+          package-manager-cache: false
+      - name: Verify and stage the canonical pair
+        run: |
+          node --input-type=module <<'JS'
+          import { pairedSourceHash, SOURCE_HASH } from './back/deploy/last-throne/lib.mjs';
+          const actual = await pairedSourceHash('back/games/last-throne', 'front/games/last-throne/web');
+          if (actual !== SOURCE_HASH) throw new Error('Canonical pair differs from accepted R3 sourceHash');
+          console.log(JSON.stringify({ pairedSourceHash: actual }));
+          JS
+          cp -a back/games/last-throne td
+          cp -a front/games/last-throne/web td/web
+      - name: Install locked TD dependencies
+        working-directory: td
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Typecheck the complete paired client and core
+        working-directory: td
+        run: npm run typecheck
+      - name: Core, HTTP and embedded storage regressions
+        working-directory: td
+        run: node --test tests/core-r3-*.test.mjs tests/server-r3-http.test.mjs tests/database-r3-storage.test.mjs tests/qa-r3-core.test.mjs tests/qa-r3-api.test.mjs
+      - name: Real PostgreSQL17 storage and migration checks
+        working-directory: td
+        env:
+          TD_TEST_DATABASE_URL: postgresql://td_ci:td_ci_ephemeral_only@127.0.0.1:${{ job.services.postgres.ports[5432] }}/td_db
+        run: timeout --signal=TERM --kill-after=5s 180s node --test tests/database-r3-storage.test.mjs
+      - name: Build the paired browser client
+        working-directory: td
+        run: |
+          node --input-type=module <<'JS'
+          import { build } from 'vite';
+          await build({ root: 'web', base: './', define: { __RELEASE_ID__: JSON.stringify('r3-001') }, build: { outDir: '../ci-web', emptyOutDir: true } });
+          JS
+      - name: Verify deployment command guards
+        working-directory: back
+        run: node --test deploy/last-throne/tests/wrappers.node.mjs

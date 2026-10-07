@@ -81,7 +81,13 @@ export function acceptsClientRelease(api, client) {
   const familyR2 = declared.includes('r2-*') && /^r2-/.test(client.releaseId)
     && v.core === 'r2-core-1' && /^r2-content-/.test(v.content)
     && v.metadataSchema === 'r2-meta-1' && v.saveFormat === 3 && v.api === 1;
-  return declared.includes(client.releaseId) || wildcardR0 || familyR1 || familyR2;
+  // Exact R3 IDs keep manifests readable by the archived R2 supervisor. The
+  // application gate still requires the complete supported R3 version tuple.
+  const exact = declared.includes(client.releaseId);
+  if (/^r3-/.test(client.releaseId)) return exact
+    && v.core === 'r3-core-1' && /^r3-content-/.test(v.content)
+    && v.metadataSchema === 'r3-meta-1' && v.saveFormat === 4 && v.api === 1;
+  return exact || wildcardR0 || familyR1 || familyR2;
 }
 export function assertCompatibility(api, clients) {
   for (const client of clients) {

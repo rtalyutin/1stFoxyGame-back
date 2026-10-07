@@ -146,6 +146,6 @@ test('owner isolation, mixed history, competing revisions and exact duplicates k
 });
 
 test('published R1 migration and core sources retain their exact accepted bytes',async()=>{
-  const baseline=new URL('../../last-throne/',import.meta.url);
+  const baseline=new URL('../releases/r1-002/',import.meta.url);
   for(const name of ['db/migrations/001_typed_eav.sql','db/migrations/002_r0_catalog.sql','db/migrations/003_r1_persistence.sql','db/migrations/004_r1_catalog.sql','db/seed-r1.mjs','db/build-r1-seed.mjs','db/r1-metadata.mjs','core/game-core.ts','core/content-r1.ts'])assert.deepEqual(await readFile(new URL(`../${name}`,import.meta.url)),await readFile(new URL(name,baseline)),name);
 });

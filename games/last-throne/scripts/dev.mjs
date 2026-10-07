@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { assertReleaseId, verifyRelease, safeRelative } from '../ops/artifacts.mjs';
 const root = fileURLToPath(new URL('../', import.meta.url));
-const releaseId = assertReleaseId(process.env.RELEASE_ID || `r2-dev-${Date.now()}`);
+const releaseId = assertReleaseId(process.env.RELEASE_ID || `r3-dev-${Date.now()}`);
 const releasesDir = resolve(process.env.DEV_RELEASES_DIR || join(root, '.local/releases'));
 try { await verifyRelease(join(releasesDir, releaseId)); }
 catch (error) {
@@ -52,4 +52,4 @@ app.addHook('onClose', () => db.close());
 for (const signal of ['SIGTERM', 'SIGINT']) process.once(signal, () => app.close());
 const port = Number(process.env.DEV_PORT || 4173);
 await app.listen({ port, host: '127.0.0.1' });
-console.log(`R2 development: http://127.0.0.1:${port}/td/ (persistent embedded PostgreSQL, not production)`);
+console.log(`R3 development: http://127.0.0.1:${port}/td/ (persistent embedded PostgreSQL, not production)`);

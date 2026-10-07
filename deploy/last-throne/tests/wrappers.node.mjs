@@ -21,7 +21,7 @@ async function fixture(t) {
   for (const name of ['package.json', 'package-lock.json', 'tsconfig.json']) await writeFile(path.join(back, name), '{}');
   await mkdir(web, { recursive: true }); await writeFile(path.join(web, 'index.html'), 'canonical frontend');
   const digest = await pairedSourceHash(back, web), archives = {};
-  for (const id of ['r0-002', 'r1-002', 'r2-001']) {
+  for (const id of ['r0-002', 'r1-002', 'r2-001', 'r3-001']) {
     const dir = path.join(ready, 'releases', id); const files = { 'web/index.html': `ready-${id}`, 'server/index.mjs': '// fixture only', 'scripts/migrate.mjs': '// fixture migration' };
     for (const [name, content] of Object.entries(files)) { await mkdir(path.dirname(path.join(dir, name)), { recursive: true }); await writeFile(path.join(dir, name), content); }
     const manifest = { releaseId: id, sourceHash: digest, runtimeMajor: 24, rollbackMode: 'frontend_only', clientEntry: 'web/index.html', serverEntry: 'server/index.mjs', migrationEntry: 'scripts/migrate.mjs',
@@ -93,27 +93,27 @@ test('command plans wait for PG, stop on SQL failures, preserve old-selection or
   const first = commandPlan({ ...args, mode: 'first-install' }); const upgrade = commandPlan({ ...args, mode: 'upgrade-r0-r1' });
   for (const script of [first, upgrade]) {
     assert.ok(script.indexOf('until docker compose') < script.indexOf('run --rm --no-deps'));
-    assert.match(script, /ON_ERROR_STOP=1/); assert.match(script, /\/ready path\/releases\/r2-001\/db\/r2-runtime-grants.sql/);
+    assert.match(script, /ON_ERROR_STOP=1/); assert.match(script, /\/ready path\/releases\/r3-001\/db\/r3-runtime-grants.sql/);
     for (const secret of ['api-secret', 'owner-secret', 'postgresql://']) assert.equal(script.includes(secret), false);
     const file = path.join(e.root, sha(script) + '.sh'); await writeFile(file, script); await exec('/bin/sh', ['-n', file]);
   }
   assert.ok(upgrade.indexOf('stop runtime') < upgrade.indexOf('build runtime'));
   assert.ok(upgrade.indexOf('RELEASES_DIR=/candidate-releases') < upgrade.indexOf('up -d runtime'));
   assert.ok(upgrade.indexOf('up -d runtime') < upgrade.indexOf('node "$TASK_RUNTIME_DIR/ops/install-release.mjs"'));
-  assert.ok(upgrade.indexOf('ops/install-release.mjs') < upgrade.indexOf('ops/cli.mjs update r2-001'));
+  assert.ok(upgrade.indexOf('ops/install-release.mjs') < upgrade.indexOf('ops/cli.mjs update r3-001'));
   assert.equal(/compose (down|restart)/.test(upgrade), false); assert.equal(upgrade.includes('nginx -s'), false);
 });
-test('failed TD control startup exits the generated upgrade before exposing R2 or calling update', async t => {
+test('failed TD control startup exits the generated upgrade before exposing R3 or calling update', async t => {
   const e = await privateEnv(t); const config = await readPrivateEnv(e.file);
   const runtime = path.join(e.root, 'runtime'), output = path.join(e.root, 'prepared'), staging = path.join(e.root, 'staging');
-  for (const dir of [runtime, path.join(output, 'runtime'), path.join(staging, 'releases/r2-001/db'), config.values.TD_RELEASES_DIR, config.values.TD_STATE_DIR]) await mkdir(dir, { recursive: true });
+  for (const dir of [runtime, path.join(output, 'runtime'), path.join(staging, 'releases/r3-001/db'), config.values.TD_RELEASES_DIR, config.values.TD_STATE_DIR]) await mkdir(dir, { recursive: true });
   await writeFile(path.join(output, 'roles.sql'), '-- fake SQL input, never executed');
-  await writeFile(path.join(staging, 'releases/r2-001/db/r2-runtime-grants.sql'), '-- fake grants input, never executed');
+  await writeFile(path.join(staging, 'releases/r3-001/db/r3-runtime-grants.sql'), '-- fake grants input, never executed');
   const script = commandPlan({ staging, output, envFile: e.file, runtimeDir: runtime, mode: 'upgrade-r0-r1', config });
   const startup = script.indexOf('until timeout 5s ');
   assert.ok(startup > script.indexOf('up -d runtime'));
   assert.ok(startup < script.indexOf('node "$TASK_RUNTIME_DIR/ops/install-release.mjs"'));
-  assert.ok(startup < script.indexOf('ops/cli.mjs update r2-001'));
+  assert.ok(startup < script.indexOf('ops/cli.mjs update r3-001'));
   const bin = path.join(e.root, 'fake-bin'); await mkdir(bin);
   const trace = path.join(e.root, 'trace'), failures = path.join(e.root, 'failed-status'), started = path.join(e.root, 'runtime-started');
   const docker = `#!/bin/sh
@@ -138,12 +138,37 @@ exit 0
   const calls = await readFile(trace, 'utf8');
   assert.match(calls, /stop runtime/); assert.match(calls, /RELEASES_DIR=\/candidate-releases/); assert.match(calls, /up -d runtime/);
   assert.equal(calls.includes('ops/install-release.mjs'), false, 'R2 must not enter the watched parent before old API recovery');
-  assert.equal(calls.includes('ops/cli.mjs update r2-001'), false, 'update must not run after startup failure');
+  assert.equal(calls.includes('ops/cli.mjs update r3-001'), false, 'update must not run after startup failure');
   assert.equal(calls.includes('curl '), false); await assert.rejects(access(path.join(config.values.TD_RELEASES_DIR, 'r2-001')));
 });
-test('operator CLI prepares the real exact R2 package without invoking Docker or disclosing env secrets', async t => {
+test('R2 upgrade preserves the running container and stages migration before exposing the new archive', async t => {
+  const e = await privateEnv(t), config = await readPrivateEnv(e.file);
+  const script = commandPlan({ staging: '/candidate', output: '/prepared', envFile: e.file, runtimeDir: '/runtime', mode: 'upgrade-r2', config });
+  assert.equal(/compose[^\n]*\b(?:build|stop|restart|down|up)\b/.test(script), false);
+  assert.equal(script.includes('cp -a'), false); assert.equal(script.includes('install -m 0600'), false);
+  assert.equal(script.includes('nginx -s'), false); assert.equal(script.includes('\\password'), false);
+  assert.ok(script.indexOf('RELEASES_DIR=/candidate-releases') < script.indexOf('ops/install-release.mjs'));
+  assert.ok(script.indexOf('r3-runtime-grants.sql') < script.indexOf('ops/install-release.mjs'));
+  assert.ok(script.indexOf('ops/install-release.mjs') < script.indexOf('ops/cli.mjs update r3-001'));
+  const file = path.join(e.root, 'upgrade.sh'); await writeFile(file, script); await exec('/bin/sh', ['-n', file]);
+});
+test('failed additive migration leaves R2 selected and never installs or switches R3', async t => {
+  const e = await privateEnv(t), config = await readPrivateEnv(e.file);
+  await mkdir(config.values.TD_STATE_DIR, { recursive: true });
+  const selection = path.join(config.values.TD_STATE_DIR, 'selection.json');
+  const raw = JSON.stringify({ apiReleaseId: 'r2-001', clientReleaseId: 'r2-001' }); await writeFile(selection, raw);
+  const bin = path.join(e.root, 'bin'), trace = path.join(e.root, 'trace'); await mkdir(bin);
+  await writeFile(path.join(bin, 'docker'), '#!/bin/sh\nprintf "%s\\n" "$*" >> "$TASK_TRACE"\ncase "$*" in *"migrate-release.mjs r3-001"*) exit 23;; esac\nexit 0\n', { mode: 0o700 });
+  const script = commandPlan({ staging: path.join(e.root, 'missing-candidate'), output: path.join(e.root, 'missing-prepared'), envFile: e.file, runtimeDir: path.join(e.root, 'runtime'), mode: 'upgrade-r2', config });
+  const file = path.join(e.root, 'upgrade.sh'); await writeFile(file, script);
+  let failure; try { await exec('/bin/sh', [file], { timeout: 10000, env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, TASK_TRACE: trace } }); } catch (error) { failure = error; }
+  assert.equal(failure?.code, 23); assert.equal(await readFile(selection, 'utf8'), raw);
+  const calls = await readFile(trace, 'utf8'); assert.match(calls, /migrate-release.mjs r3-001/);
+  assert.equal(calls.includes('update r3-001'), false); await assert.rejects(access(path.join(config.values.TD_RELEASES_DIR, 'r3-001')));
+});
+test('operator CLI prepares the real exact R3 package without invoking Docker or disclosing env secrets', async t => {
   const staging = process.env.TD_TEST_STAGING;
-  if (!staging) { t.skip('Set TD_TEST_STAGING to the verified assembled R2 workspace'); return; }
+  if (!staging) { t.skip('Set TD_TEST_STAGING to the verified assembled R3 workspace'); return; }
   const e = await privateEnv(t); const fakeBin = path.join(e.root, 'bin'); await mkdir(fakeBin); const marker = path.join(e.root, 'docker-called');
   await writeFile(path.join(fakeBin, 'docker'), `#!/bin/sh\necho called > '${marker}'\nexit 1\n`, { mode: 0o700 });
   const output = path.join(e.root, 'prepared');

@@ -1,6 +1,6 @@
-# Last Throne R1 database
+# Last Throne database: R3 with retained R1/R2
 
-The schema `last_throne` belongs only to this game. Migrations do not inspect or modify the first game's tables. The retained R0 migrations create typed EAV metadata/content foundations. R1 adds guest sessions, owner-authorized profiles/runs, immutable checkpoint generations and idempotent terminal results.
+The schema `last_throne` belongs only to this game. Migrations do not inspect or modify the first game's tables. The retained R0 migrations create typed EAV metadata/content foundations. R1 adds guest sessions, owner-authorized profiles/runs, immutable checkpoint generations and idempotent terminal results. R2 adds revised magic state; R3 adds typed item slots, expeditions, pending rewards and hero-bound Aegis. Published migrations001–006 and exact R1/R2 data/handlers remain unchanged.
 
 Run `DATABASE_URL=... node scripts/migrate.mjs` with the migration owner. The URL must identify the dedicated Last Throne database/role. Each SQL file is applied in one transaction, and its SHA-256 is recorded in `last_throne.schema_migrations`. Repeated execution skips exact matches; modified history fails. A non-blocking session advisory lock prevents simultaneous migrators: contention fails with `MIGRATION_BUSY`. Lock waits are bounded to 5 seconds and statements to 60 seconds. Recovery after a failed migration is another invocation of this command. There are no destructive `down` migrations.
 
@@ -14,11 +14,13 @@ The seed `002_r0_catalog.sql` publishes `r0-meta-1` and `r0-content-1`, with onl
 
 ## Database roles
 
-Use distinct credentials. The migration owner owns the schema. The API must be a separate non-owner role without membership in that owner role or superuser privileges. After migration, apply `db/r1-runtime-grants.sql` as the dedicated schema owner for the `last_throne_api` role provisioned by the runbook. That file replaces historical R0 blanket reads with an explicit content/EAV read allowlist and named, bounded R1 function grants. Do not apply the old R0 blanket/default SELECT grants to an R1 database.
+Use distinct credentials. The migration owner owns the schema. The API must be a separate non-owner role without membership in that owner role or superuser privileges. After the current migration, apply `db/r3-runtime-grants.sql` as the dedicated schema owner for the `last_throne_api` role provisioned by the runbook. That file replaces historical blanket reads with an explicit content/EAV read allowlist and named, bounded R1/R2/R3 function grants. Old versioned grant files remain for their retained artifacts.
 
 Functions and tables have no PUBLIC privileges. The API has no direct table writes or metadata/content publication privileges. `ALTER DEFAULT PRIVILEGES` must be run by the migration owner. Do not reuse the first game's database credentials. The infrastructure runbook provisions roles; the additive migrations do not require cluster-level `CREATE ROLE` privileges.
 
 ## Local verification
+
+Current R3 storage/API acceptance runs with `node --test tests/database-r3-storage.test.mjs tests/server-r3-http.test.mjs`. See `docs/DB-R3.md` for exact hashes, typed decomposition, migration/grant commands and the same storage assertions against an optional fresh dedicated PostgreSQL17 `td_db`. R3 projections are checked against stored canonical SHA before serving content or ETag. SQL007/008 publication guards validate known handlers even under future metadata revisions.
 
 `node --test tests/database.test.mjs tests/r1-database.test.mjs tests/r1-api.test.mjs` runs PostgreSQL SQL in PGlite and the R1 HTTP contract in Fastify. Tests execute the real constraints/functions and migrations, including transaction failure, immutable metadata movement, value types, reference boundaries, atomic publication and the persistence scenarios below. PGlite is a local PostgreSQL engine; it does not prove the production server's capacity, backup/restore, network configuration or behavior of multiple independent PostgreSQL sessions. Real-server migration/readback checks are required before activation.
 

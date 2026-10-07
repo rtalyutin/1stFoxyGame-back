@@ -20,7 +20,8 @@ export function guestToken(header) {
 }
 export function operationHash(operation, runId, body) {
   // Keep accepted R1 hashes byte-identical. Inspecting the format/pin here does not validate gameplay.
-  const snapshotSchemaVersion = body.snapshotSchemaVersion === 3 || operation === 'finish' && body.result?.versions?.core === 'r2-core-1' ? 3 : 2;
+  const snapshotSchemaVersion = body.snapshotSchemaVersion === 4 || operation === 'finish' && body.result?.versions?.core === 'r3-core-1' ? 4
+    : body.snapshotSchemaVersion === 3 || operation === 'finish' && body.result?.versions?.core === 'r2-core-1' ? 3 : 2;
   return createHash('sha256').update(canonicalJson({ canonicalization: 1, operation, runId, snapshotSchemaVersion, body })).digest('hex');
 }
 export function newRequestId() { return randomUUID(); }

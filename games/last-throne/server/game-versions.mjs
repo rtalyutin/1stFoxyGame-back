@@ -2,10 +2,13 @@ import { parseContentProjection as parseR1Content } from '../core/content-r1.ts'
 import { validateSnapshot as validateR1Snapshot } from '../core/game-core.ts';
 import { parseContentProjection as parseR2Content } from '../core/content-r2.ts';
 import { validateSnapshot as validateR2Snapshot } from '../core/game-core-r2.ts';
+import { parseContentProjection as parseR3Content } from '../core/content-r3.ts';
+import { validateSnapshot as validateR3Snapshot } from '../core/game-core-r3.ts';
 
 const runtimes = [
   { stage: 'R1', core: 'r1-core-1', metadataSchema: 'r1-meta-1', saveFormat: 2, contentPrefix: 'r1-content-', parseContent: parseR1Content, validateSnapshot: validateR1Snapshot },
   { stage: 'R2', core: 'r2-core-1', metadataSchema: 'r2-meta-1', saveFormat: 3, contentPrefix: 'r2-content-', parseContent: parseR2Content, validateSnapshot: validateR2Snapshot },
+  { stage: 'R3', core: 'r3-core-1', metadataSchema: 'r3-meta-1', saveFormat: 4, contentPrefix: 'r3-content-', parseContent: parseR3Content, validateSnapshot: validateR3Snapshot },
 ];
 
 function runtimeForPins({ core, content, metadataSchema, saveFormat, api = 1 }) {
