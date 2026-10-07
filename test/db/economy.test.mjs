@@ -41,7 +41,7 @@ test('PostgreSQL 18 reward migration preserves prior property, exact typed seed 
     await admin.query('UPDATE entities SET revision=3 WHERE id=$1', [profileId]);
   });
   const profile = await repository.getProfile(accountId);
-  assert.deepEqual(await migrate(admin), ['004-economy.sql','005-balance.sql']);
+  assert.deepEqual(await migrate(admin), ['004-economy.sql','005-balance.sql','006-forge.sql']);
   assert.deepEqual(await migrate(admin), []);
   assert.deepEqual(await repository.getProfile(accountId), profile);
   await repository.readiness();

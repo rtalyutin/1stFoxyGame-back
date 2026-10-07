@@ -65,9 +65,9 @@ test('PostgreSQL 18 constructor and versioned migrations',async t=>{
   const {schema,client:c}=await fresh(admin);t.after(()=>c.end());
 
   await t.test('clean/repeated/concurrent migration, typed catalog and technical journal',async()=>{
-    assert.deepEqual(await migrate(c),['001-constructor.sql','002-content.sql','003-profile.sql','004-economy.sql','005-balance.sql']);assert.deepEqual(await migrate(c),[]);
-    assert.equal((await c.query('SELECT count(*)::int AS n FROM applied_migrations')).rows[0].n,5);
-    assert.equal((await c.query("SELECT count(*)::int AS n FROM entities WHERE state='active'")).rows[0].n,14);
+    assert.deepEqual(await migrate(c),['001-constructor.sql','002-content.sql','003-profile.sql','004-economy.sql','005-balance.sql','006-forge.sql']);assert.deepEqual(await migrate(c),[]);
+    assert.equal((await c.query('SELECT count(*)::int AS n FROM applied_migrations')).rows[0].n,6);
+    assert.equal((await c.query("SELECT count(*)::int AS n FROM entities WHERE state='active'")).rows[0].n,15);
     const boss=(await c.query(`SELECT value_integer::int AS hits FROM entity_parameter_values WHERE entity_id=$1 AND parameter_id=$2`,[contentId('entity:enemy-definition:r2.1:boss'),contentId('parameter:enemy-definition:required-hits')])).rows[0];
     assert.equal(boss.hits,3);
     const other=await connect(schema);try{assert.deepEqual(await Promise.all([migrate(c),migrate(other)]),[[],[]]);}finally{await other.end();}
@@ -83,7 +83,7 @@ test('PostgreSQL 18 constructor and versioned migrations',async t=>{
   await t.test('prior constructor schema upgrades while preserving optional objects',async()=>{
     const previous=await fresh(admin);try{
       await migrate(previous.client,migrations.slice(0,1));const f=await fixture(previous.client);await value(previous.client,f,'before-upgrade');
-      assert.deepEqual(await migrate(previous.client),['002-content.sql','003-profile.sql','004-economy.sql','005-balance.sql']);
+      assert.deepEqual(await migrate(previous.client),['002-content.sql','003-profile.sql','004-economy.sql','005-balance.sql','006-forge.sql']);
       assert.equal((await previous.client.query('SELECT value_text FROM entity_parameter_values WHERE entity_id=$1',[f.entity])).rows[0].value_text,'before-upgrade');
     }finally{await previous.client.end();}
   });
@@ -93,7 +93,7 @@ test('PostgreSQL 18 constructor and versioned migrations',async t=>{
     const sql='CREATE TABLE must_rollback(id integer); SELECT missing_function_for_test();';
     await assert.rejects(migrate(c,[...migrations,{id:'003-fail.sql',sql,checksum:createHash('sha256').update(sql).digest('hex')} ]));
     assert.equal((await c.query("SELECT to_regclass('must_rollback') AS table")).rows[0].table,null);
-    assert.equal((await c.query('SELECT count(*)::int AS n FROM applied_migrations')).rows[0].n,5);
+    assert.equal((await c.query('SELECT count(*)::int AS n FROM applied_migrations')).rows[0].n,6);
   });
   await t.test('empty objects and additional metadata require no domain DDL',async()=>{
     const f=await fixture(c);const before=(await c.query("SELECT count(*)::int AS n FROM information_schema.columns WHERE table_schema=$1 AND table_name='entities'",[schema])).rows[0].n;

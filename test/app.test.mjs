@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
@@ -63,7 +64,7 @@ test('invalid JSON has a bounded error envelope without echoing the payload', as
 });
 
 test('OpenAPI validates and any remaining future schema references resolve', async () => {
-  await SwaggerParser.validate(contractUrl.pathname);
+  await SwaggerParser.validate(fileURLToPath(contractUrl));
   for (const operation of Object.values(contract['x-planned-paths'])) {
     assert.equal(operation.implemented, false);
     assert.equal(operation.release, 'R3');
@@ -74,7 +75,7 @@ test('OpenAPI validates and any remaining future schema references resolve', asy
 });
 
 test('legacy run request and current profile schemas reject malformed trusted data', async () => {
-  const dereferenced = await SwaggerParser.dereference(contractUrl.pathname);
+  const dereferenced = await SwaggerParser.dereference(fileURLToPath(contractUrl));
   const validate = ajv.compile(dereferenced.components.schemas.RunStartRequest);
   const valid = {
     operationId: '45f3d533-943b-4dc1-aade-34e6b283a5ca', expectedRevision: 0,

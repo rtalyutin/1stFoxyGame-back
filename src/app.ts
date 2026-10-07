@@ -103,6 +103,7 @@ export function buildApp(options: AppOptions = {}) {
     if(request.url.includes('?'))throw new ProfileError('INVALID_REQUEST',400);
     return repository!.getProfile(session.accountId);
   });
+  app.get('/api/v1/workshop',async(request)=>{const session=await sessionFor(request);if(request.url.includes('?'))throw new ProfileError('INVALID_REQUEST',400);return service!.getWorkshop(session.accountId);});
   app.get('/api/v1/balance',async(request)=>{if(request.url.includes('?'))throw new ProfileError('INVALID_REQUEST',400);if(!repository)throw new ProfileError('BALANCE_STORAGE_UNAVAILABLE',503);return repository.getBalance();});
   app.get('/api/v1/admin/balance',async(request)=>{const session=await sessionFor(request);if(request.url.includes('?'))throw new ProfileError('INVALID_REQUEST',400);if(!await repository!.isBalanceAdmin(session.accountId))throw new ProfileError('BALANCE_FORBIDDEN',403);return repository!.getBalance();});
   app.put('/api/v1/admin/balance',async(request)=>{

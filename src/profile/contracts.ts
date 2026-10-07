@@ -1,3 +1,4 @@
+import type { WorkshopView } from '../forge/view.js';
 import type { PinnedBalance } from '../balance/model.js';
 import type { Command, SimulationSnapshot } from '../combat/simulation.js';
 
@@ -5,7 +6,7 @@ export type GoldMilli = string;
 export type Slot = 'weapon' | 'body' | 'legs' | 'talisman';
 export type HeroId = 'pudge';
 export type ComponentId = 'steel' | 'ember' | 'core';
-export type ItemDefinitionId = 'fast_reel' | 'long_link' | 'piercing_tooth' | 'return_sickle' | 'conductor_cuffs' | 'side_step_boots' | 'trophy_counter';
+export type ItemDefinitionId = 'fast_reel' | 'long_link' | 'piercing_tooth' | 'return_sickle' | 'conductor_cuffs' | 'side_step_boots' | 'trophy_counter' | 'debt_clock';
 export type ConsumableId = 'slow_dust' | 'collector_vial';
 export type Components = Record<ComponentId, number>;
 export interface Recipe { goldMilli: GoldMilli; components: Components; }
@@ -39,6 +40,10 @@ export interface Profile {
 export interface RunView { balance?: PinnedBalance; runId: string; loot: {goldMilli: GoldMilli; components: Components}; snapshot: SimulationSnapshot; control: 'owner' | 'readOnly'; ownerEpoch: number; updatedAt: string; }
 export type RunOwnership = { runId: string; ownerEpoch: number };
 export type OperationAction =
+  | { type: 'forge_settle'; payload: Record<string, never> }
+  | { type: 'forge_tap'; payload: { balanceRevision: string } }
+  | { type: 'forge_buy'; payload: { productionId: 'apprentice'|'smelter'|'press'|'alchemy'; balanceRevision: string } }
+  | { type: 'forge_upgrade'; payload: { upgrade: 'tap'|'organization'; balanceRevision: string } }
   | { type: 'start_run'; payload: Record<string, never> }
   | { type: 'advance_run'; payload: RunOwnership & { frames: Command[][] } }
   | { type: 'pause_run' | 'resume_run' | 'leave_shop' | 'end_run'; payload: RunOwnership }
@@ -49,4 +54,6 @@ export type OperationAction =
   | { type: 'quick_slots'; payload: { slots: [ConsumableId | null, ConsumableId | null] } }
   | { type: 'consume'; payload: RunOwnership & { definitionId: ConsumableId } };
 export type Operation = { operationId: string; expectedRevision: number; clientId: string } & OperationAction;
-export interface OperationResult { operationId: string; status: 'committed'; profile: Profile; run: RunView | null; replayed: boolean; }
+/** Presentation receipt only; amounts have already been committed to the wallet. */
+export interface ConfirmedReward {enemyId:string;kind:'normal'|'strong'|'boss';at:number;goldMilli:GoldMilli;components:Components;clockGoldMilli?:GoldMilli;clockSeconds?:number;}
+export interface OperationResult { operationId: string; status: 'committed'; profile: Profile; run: RunView | null; replayed: boolean; workshop?: WorkshopView; visualRewards?:ConfirmedReward[]; }

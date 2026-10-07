@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "1stFoxyGame API",
-    "version": "1.0.0-r34",
+    "version": "0.5.0",
     "description": "R3/R4 persistent PostgreSQL profile, controlled provisioned accounts, server-replayed combat, atomic fixed-point economy and equipment. No signup. Same-origin JSON mutations require CSRF. Snapshot incompatible handling never resets property."
   },
   "servers": [
@@ -1622,6 +1622,140 @@
             }
           }
         }
+      }
+    },
+    "/api/v1/workshop": {
+      "get": {
+        "operationId": "getProfile",
+        "x-release": "R3/R4",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkshopView"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Error: access, rules, conflict or unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Bounded request/processing error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Bounded request/processing error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Bounded request/processing error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "Read committed workshop quantities and latest server quotes without settling income"
       }
     }
   },
@@ -3624,6 +3758,9 @@
                     "$ref": "#/components/schemas/Components"
                   }
                 }
+              },
+              "balance": {
+                "$ref": "#/components/schemas/PinnedBalance"
               }
             },
             "required": [
@@ -3638,6 +3775,16 @@
           },
           "replayed": {
             "type": "boolean"
+          },
+          "workshop": {
+            "$ref": "#/components/schemas/WorkshopView"
+          },
+          "visualRewards": {
+            "type": "array",
+            "maxItems": 10000,
+            "items": {
+              "$ref": "#/components/schemas/ConfirmedReward"
+            }
           }
         },
         "required": [
@@ -4259,6 +4406,190 @@
               "type",
               "payload"
             ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "operationId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "expectedRevision": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "clientId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "forge_settle"
+                ]
+              },
+              "payload": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {}
+              }
+            },
+            "required": [
+              "operationId",
+              "expectedRevision",
+              "clientId",
+              "type",
+              "payload"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "operationId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "expectedRevision": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "clientId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "forge_tap"
+                ]
+              },
+              "payload": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "balanceRevision": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "required": [
+                  "balanceRevision"
+                ]
+              }
+            },
+            "required": [
+              "operationId",
+              "expectedRevision",
+              "clientId",
+              "type",
+              "payload"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "operationId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "expectedRevision": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "clientId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "forge_buy"
+                ]
+              },
+              "payload": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "productionId": {
+                    "$ref": "#/components/schemas/ProductionId"
+                  },
+                  "balanceRevision": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "required": [
+                  "productionId",
+                  "balanceRevision"
+                ]
+              }
+            },
+            "required": [
+              "operationId",
+              "expectedRevision",
+              "clientId",
+              "type",
+              "payload"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "operationId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "expectedRevision": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "clientId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "forge_upgrade"
+                ]
+              },
+              "payload": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "upgrade": {
+                    "type": "string",
+                    "enum": [
+                      "tap",
+                      "organization"
+                    ]
+                  },
+                  "balanceRevision": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "required": [
+                  "upgrade",
+                  "balanceRevision"
+                ]
+              }
+            },
+            "required": [
+              "operationId",
+              "expectedRevision",
+              "clientId",
+              "type",
+              "payload"
+            ]
           }
         ]
       },
@@ -4646,6 +4977,9 @@
           },
           "runtime": {
             "$ref": "#/components/schemas/SimulationRuntimeBalance"
+          },
+          "forge": {
+            "$ref": "#/components/schemas/ForgeConfig"
           }
         }
       },
@@ -4769,7 +5103,7 @@
             }
           }
         },
-        "description": "Immutable balance selected at start_run. Legacy saved runs use legacy-r34.1 and no compiled.runtime; r34.2 runs use a published UUID revision and compiled.runtime."
+        "description": "Immutable balance selected at start_run. Legacy saved runs use legacy-r34.1 and no compiled.runtime; r34.2 runs use a published UUID revision and compiled.runtime. Current R5 revisions include compiled.forge and live workshop settings. Older saved combat revisions may omit forge and debt_clock."
       },
       "PublishBalanceRequest": {
         "type": "object",
@@ -4787,6 +5121,471 @@
             "$ref": "#/components/schemas/BalanceValues"
           }
         }
+      },
+      "ProductionId": {
+        "type": "string",
+        "enum": [
+          "apprentice",
+          "smelter",
+          "press",
+          "alchemy"
+        ]
+      },
+      "ForgeConfig": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "productions": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "apprentice": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "baseCostGoldMilli": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]{0,18})$",
+                    "description": "Nonnegative integer milli-gold, max 9223372036854775807; 1000 = 1 gold."
+                  },
+                  "rateGoldMilliPerSecond": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]{0,18})$",
+                    "description": "Nonnegative integer milli-gold, max 9223372036854775807; 1000 = 1 gold."
+                  }
+                },
+                "required": [
+                  "baseCostGoldMilli",
+                  "rateGoldMilliPerSecond"
+                ]
+              },
+              "smelter": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "baseCostGoldMilli": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]{0,18})$",
+                    "description": "Nonnegative integer milli-gold, max 9223372036854775807; 1000 = 1 gold."
+                  },
+                  "rateGoldMilliPerSecond": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]{0,18})$",
+                    "description": "Nonnegative integer milli-gold, max 9223372036854775807; 1000 = 1 gold."
+                  }
+                },
+                "required": [
+                  "baseCostGoldMilli",
+                  "rateGoldMilliPerSecond"
+                ]
+              },
+              "press": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "baseCostGoldMilli": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]{0,18})$",
+                    "description": "Nonnegative integer milli-gold, max 9223372036854775807; 1000 = 1 gold."
+                  },
+                  "rateGoldMilliPerSecond": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]{0,18})$",
+                    "description": "Nonnegative integer milli-gold, max 9223372036854775807; 1000 = 1 gold."
+                  }
+                },
+                "required": [
+                  "baseCostGoldMilli",
+                  "rateGoldMilliPerSecond"
+                ]
+              },
+              "alchemy": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "baseCostGoldMilli": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]{0,18})$",
+                    "description": "Nonnegative integer milli-gold, max 9223372036854775807; 1000 = 1 gold."
+                  },
+                  "rateGoldMilliPerSecond": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]{0,18})$",
+                    "description": "Nonnegative integer milli-gold, max 9223372036854775807; 1000 = 1 gold."
+                  }
+                },
+                "required": [
+                  "baseCostGoldMilli",
+                  "rateGoldMilliPerSecond"
+                ]
+              }
+            },
+            "required": [
+              "apprentice",
+              "smelter",
+              "press",
+              "alchemy"
+            ]
+          },
+          "priceGrowthPermille": {
+            "type": "integer",
+            "minimum": 1000,
+            "maximum": 10000
+          },
+          "tapGoldMilli": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,18})$",
+              "description": "Nonnegative integer milli-gold, max 9223372036854775807; 1000 = 1 gold."
+            },
+            "minItems": 4,
+            "maxItems": 4
+          },
+          "tapUpgradeCostGoldMilli": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,18})$",
+              "description": "Nonnegative integer milli-gold, max 9223372036854775807; 1000 = 1 gold."
+            },
+            "minItems": 3,
+            "maxItems": 3
+          },
+          "organizationPermille": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 1000,
+              "maximum": 100000
+            },
+            "minItems": 4,
+            "maxItems": 4
+          },
+          "organizationUpgradeCostGoldMilli": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,18})$",
+              "description": "Nonnegative integer milli-gold, max 9223372036854775807; 1000 = 1 gold."
+            },
+            "minItems": 3,
+            "maxItems": 3
+          },
+          "offlineCapSeconds": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 604800
+          },
+          "clockEveryKills": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000
+          },
+          "clockSeconds": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3600
+          }
+        },
+        "required": [
+          "productions",
+          "priceGrowthPermille",
+          "tapGoldMilli",
+          "tapUpgradeCostGoldMilli",
+          "organizationPermille",
+          "organizationUpgradeCostGoldMilli",
+          "offlineCapSeconds",
+          "clockEveryKills",
+          "clockSeconds"
+        ]
+      },
+      "WorkshopSettlement": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "elapsedMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "creditedMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "discardedMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "goldMilli": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,18})$",
+            "description": "Nonnegative integer milli-gold, max 9223372036854775807; 1000 = 1 gold."
+          }
+        },
+        "required": [
+          "elapsedMs",
+          "creditedMs",
+          "discardedMs",
+          "goldMilli"
+        ]
+      },
+      "WorkshopView": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "schemaVersion": {
+            "type": "string",
+            "enum": [
+              "runner-workshop.1"
+            ]
+          },
+          "balanceRevision": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "serverNowMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "settledAtMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "offlineCapSeconds": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 604800
+          },
+          "tapLevel": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3
+          },
+          "organizationLevel": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3
+          },
+          "tapGoldMilli": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,18})$",
+            "description": "Nonnegative integer milli-gold, max 9223372036854775807; 1000 = 1 gold."
+          },
+          "organizationPermille": {
+            "type": "integer",
+            "minimum": 1000,
+            "maximum": 100000
+          },
+          "productionRate": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "numerator": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]*)$"
+              },
+              "denominator": {
+                "type": "integer",
+                "enum": [
+                  1000
+                ]
+              }
+            },
+            "required": [
+              "numerator",
+              "denominator"
+            ]
+          },
+          "productions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "$ref": "#/components/schemas/ProductionId"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "owned": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "rateGoldMilliPerSecond": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,18})$",
+                  "description": "Nonnegative integer milli-gold, max 9223372036854775807; 1000 = 1 gold."
+                },
+                "nextCostGoldMilli": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,18})$",
+                  "description": "Nonnegative integer milli-gold, max 9223372036854775807; 1000 = 1 gold.",
+                  "nullable": true
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "owned",
+                "rateGoldMilliPerSecond",
+                "nextCostGoldMilli"
+              ]
+            },
+            "minItems": 4,
+            "maxItems": 4
+          },
+          "upgrades": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "tap": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "costGoldMilli": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]{0,18})$",
+                    "description": "Nonnegative integer milli-gold, max 9223372036854775807; 1000 = 1 gold.",
+                    "nullable": true
+                  },
+                  "nextGoldMilli": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]{0,18})$",
+                    "description": "Nonnegative integer milli-gold, max 9223372036854775807; 1000 = 1 gold.",
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "costGoldMilli",
+                  "nextGoldMilli"
+                ]
+              },
+              "organization": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "costGoldMilli": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]{0,18})$",
+                    "description": "Nonnegative integer milli-gold, max 9223372036854775807; 1000 = 1 gold.",
+                    "nullable": true
+                  },
+                  "nextPermille": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991,
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "costGoldMilli",
+                  "nextPermille"
+                ]
+              }
+            },
+            "required": [
+              "tap",
+              "organization"
+            ]
+          },
+          "lastSettlement": {
+            "$ref": "#/components/schemas/WorkshopSettlement"
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "balanceRevision",
+          "serverNowMs",
+          "settledAtMs",
+          "offlineCapSeconds",
+          "tapLevel",
+          "organizationLevel",
+          "tapGoldMilli",
+          "organizationPermille",
+          "productionRate",
+          "productions",
+          "upgrades"
+        ]
+      },
+      "ConfirmedReward": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Already committed reward; presentation only, never client reward authority. Replayed operation retains the same receipts.",
+        "required": [
+          "enemyId",
+          "kind",
+          "at",
+          "goldMilli",
+          "components"
+        ],
+        "properties": {
+          "enemyId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "normal",
+              "strong",
+              "boss"
+            ]
+          },
+          "at": {
+            "type": "number",
+            "minimum": 0
+          },
+          "goldMilli": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,18})$",
+            "description": "Nonnegative integer milli-gold, max 9223372036854775807; 1000 = 1 gold."
+          },
+          "components": {
+            "$ref": "#/components/schemas/Components"
+          },
+          "clockGoldMilli": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,18})$",
+            "description": "Nonnegative integer milli-gold, max 9223372036854775807; 1000 = 1 gold."
+          },
+          "clockSeconds": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3600
+          }
+        },
+        "oneOf": [
+          {
+            "required": [
+              "clockGoldMilli",
+              "clockSeconds"
+            ]
+          },
+          {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "clockGoldMilli"
+                  ]
+                },
+                {
+                  "required": [
+                    "clockSeconds"
+                  ]
+                }
+              ]
+            }
+          }
+        ]
       }
     }
   },
