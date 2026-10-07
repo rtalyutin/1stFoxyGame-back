@@ -1,4 +1,26 @@
-# R2 — состояние поставки
+# R3 — состояние поставки
+
+## Текущая правка камеры
+
+ACTIVE_CONTRACT: r3-camera/1, 07.10.2026. Пользователь попросил приблизить поле, убрать пустое пространство и опустить угол к горизонту, сначала показав макет; макет camera-preview-2 принят ответом «да. отлично». authorial_intent=camera-preview-2. Цель — реализовать этот ракурс в существующем Babylon renderer, сохранив игровой ввод, три линии, круглые позиции героев, квадратные площадки зданий и трон целиком с запасом справа. Новые модели, механики, core/content/save/API и первая игра вне этой правки.
+
+stage=QA_VERIFIED; evidence_status=VERIFIED; action_decision=CONTINUE к paired CI и объединению. /root — координатор и DevOps; renderer_r1 — замороженный код и 6 авторских браузерных PASS плюс TypeScript; delivery — actual assembly и 31PASS/0FAIL/0SKIP (совместимость, API001/client002, content/rollback, checkpoint/replay и неизменный PID); spec_verifier — независимая приёмка конечной сборки PASS10/errors0, docs/QA-CAMERA.md, evidence/camera-qa/acceptance.json. Проверены все 15 мест обоих размеров, трон целиком, low/resize, перестановка, строительство, наземное/прицельное заклинание и save4 reload с API001 (revision4). Изменение камеры инвалидирует только её framing/picking evidence, сохраняя исторические R3 core/DB результаты. Старые архивы r0-002/r1-002/r2-001/r3-001 и Last-Throne-R3.zip неизменяемы.
+
+Критерии: поле заметно крупнее, угол ниже принятого исходного; все позиции и площадки видны и выбираются; трон не обрезан; строительство и прицеливание работают после resize и в low quality. Проверяемые экраны 1440×900 и 2048×1025; Linux/Chromium153/WebGL2/SwiftShader — доступный стенд, физический GPU и VPS не проверены. Готовый клиент r3-content-002 sourceHash0dfe1bcaef0f7d94e05d5f50495bcfb0f84227b8f93b113b38cf5bdf0c732c83/manifest7d65186b3f8522585dc4ef17aa91c84a46994e63f57f656720a970916b50852a/frontendr3-web-28b2f81030b0bd69, прежние API001/backend7b084f31d98e7e6f/core/content/save4. Git frontend PR9/head eb590b49e07a3be7b7725182565939f615f558c3; свежие main front1f6fe217635c7d811f179a99a67a85b5dc6e939a/back3a359828aeb2c5998fa6f47f971e4af792147d71. Следующий шаг: независимая QA, paired CI, объединение и сохранение нового пакета; серверная операция NOT_STARTED.
+
+## Проверенная поставка R3
+
+ACTIVE_CONTRACT: r3/1. Координатор /root, 07.10.2026. Поручение «давай следующий релиз выполним». Основание docs/R3-CONTRACT.md и текущее ТЗ v0.6 (обновление ранее принятой identity v4). R3: полная партия, 15 волн, 3 командира, вылазки, предметы, Aegis, сохранения save4; старые партии не конвертируются.
+
+stage=SOURCE_MERGED; evidence_status=VERIFIED; action_decision=CONTINUE; hypothesis_assessment=NOT_ASSESSED. GitHub base backend846be5b5f3a26e34e801a7d22a002375d7274302, frontend44a5ce0d127e7b76d6e1883f4dea7e248b1b978e. Новые изменения хаба сохраняются. Runtime Node24/Babylon9.29/WebGL2; доступный стенд Linux/Chromium/SwiftShader, не целевой физический ПК. Старые аппаратные/runtime доказательства не подтверждают R3.
+
+accepted: core_r1 — frozen core/content, 10 авторских PASS и независимая полная партия; database — frozen server/SQL007/008, 18 авторских PASS; delivery — frozen build/ops, 38PASS/1socketSKIP; renderer/audio — frozen,17PASS. accepted: renderer_r1 — cloud resume DTO/start checkpoint race исправлены, preview002 targeted7PASS; graphics/audio17PASS. accepted: spec_verifier — независимый PASS_LOCAL_SCOPED, acceptance-report.json/QA-R3.md; exact UI15волн/victory/tick32008/throne131/cloudrevision37. Новых product defects не установлено. Root — интеграция репозиториев, контракт, фактический выпуск файлов. GitHub только root/DevOps. VPS operation_status=NOT_STARTED: серверного канала нет; подготовка и проверки продолжаются.
+
+authorial_intent r3-art-1: сигилы лагеря/лавки/Рошана и читаемое отсутствие героя, предметы/выбор награды/Aegis рядом с карточками; сохранить магию и различие круглых и квадратных площадок. Принятие человеком не заявлено.
+
+next: готовая поставка/ТЗ, затем серверный канал пользователя и человеческий плейтест. r3-001 frozen source2233389d…fadb/manifestdefab065…fc63; fullNode213/212PASS/1SKIP; independent core/API15,compat4,activation4,lifecycle5PASS. FrontPR8 иBackPR6 опубликованы, CI обоихрепозиториев иactual PostgreSQL17.11 (11PASS) green; Полный UI gate закрыт; main обоихрепозиториев продвинулся параллельным Syezzhaem R2,53/52изменённыхпути, конфликтовнет. Front integratedheadbabf28bdc01e559ac16bab117c15805e1aad37ff сохраняет921upstreamblobs, Интеграционный CI front37579477356/37579477346 иback37580098470/37580098529 SUCCESS. Finalpairedbackend549ff45d…81c0. PR8/PR6 MERGED; mainfront1f6fe217635c7d811f179a99a67a85b5dc6e939a иback3a359828aeb2c5998fa6f47f971e4af792147d71. Readback main/PR/merge tree равен tested tree; fresh rulesets=[]/protected=false. evidence/github-ci-r3-final.json. VPS NOT_STARTED.
+
+## История проверенного R2
 
 ACTIVE_CONTRACT: r2/1. Координатор: /root. Дата: 04.10.2026.
 
@@ -12,7 +34,7 @@ R2 реализован: пять героев, три семейства зда
 
 ## Точный объект и принятие
 
-feature_id=last-throne-r2; contract_revision=r2/1; stage=VERIFIED_LOCAL; producer=/root; consumer=user; artifact_revision=r2-001; evidence_status=VERIFIED; gate_verdict=PASS для локальной функциональной области; action_decision=CONTINUE к сохранению готовой поставки; hypothesis_assessment=NOT_ASSESSED для реакции пользователя и баланса.
+feature_id=last-throne-r2; contract_revision=r2/1; stage=SOURCE_MERGED; producer=/root; consumer=user; artifact_revision=r2-001; evidence_status=VERIFIED; gate_verdict=PASS для локальной функциональной области; action_decision=CONTINUE к сохранению готовой поставки; hypothesis_assessment=NOT_ASSESSED для реакции пользователя и баланса.
 
 - Source SHA-256: b4cb38f2477b406608f648cb72e5c1c68a4aed8fd4f3fa84a88637e70d4b9bf8.
 - Manifest SHA-256: dafc60169b772214823799f89fc623d3b4f1f02ab0e69710f57e6ee57aa54dbf; 2279 файлов.
@@ -45,13 +67,3 @@ Authorial_intent r2-art-1 сохранён. B1: фиксированный бо�
 Готовый пакет Last-Throne-R2.zip включает исходники, exact R0/R1/R2, тесты, доказательства, обновлённое ТЗ v0.5 и инструкции. Last-Throne-R2-screen.png — кадр реально работающего r2-001, не концепт. ТЗ обновляет ту же ранее созданную identity с сохранением истории версий.
 
 Следующее действие координатора: проверить целостность архива и сохранить готовые файлы. Следующее внешнее действие при доступном серверном канале — выполнить ops/RUNBOOK-R2.md на сервере первой игры; никакая внешняя установка этим локальным gate не объявлена выполненной.
-
-## Интеграция в существующие репозитории — 2026-10-05
-
-Предыдущий шаг сохранения архива завершён. По поручению «реализуй что сможешь сам, потом напиши что с меня осталось» выполнена техническая интеграция: canonical core/server/db/ops находятся в backend `games/last-throne`, web — в парном frontend `games/last-throne/web`. Первый игровой код, его production-маршруты и графика зала сохранены. Готовые releases и production dependencies продолжают поступать из принятого ZIP, не из Git.
-
-Добавлены `deploy/last-throne/assemble.mjs` и `operator.mjs`: exact paired-source assembly и подготовка команд установки в явном режиме first-install/upgrade-r0-r1. Проверки — 11/11 author wrapper PASS с реальным R2 и независимый контроль; startup failure прекращает план до expose/update. Hub activation: 13/13 Node PASS и 4/4 независимых actual R2 API/PGlite/original gateway PASS. Probe закреплён на manifest/source/content projection hashes и проверяет 55 web files; default catalog остаётся soon до фактического размещения.
-
-Публикация: backend PR https://github.com/rtalyutin/1stFoxyGame-back/pull/5 и frontend PR https://github.com/rtalyutin/1stFoxyGame-front/pull/7. Исполняемая ревизия backend 21afa87aed9f051a3295a733d29da45db7905d72: CI run37340330644 PASS, включая первую игру, PostgreSQL18 и Docker smoke; wrapper CI без ready package — 10 PASS/1 явный SKIP. Frontend 1fe83cc6282a8b54109b7c8ab68921080a6c15bb: CI run37340218868 PASS, включая typecheck/build первой игры, hub build, activation13 и paired-container smoke. Это CI первой игры/интеграции, не проверка TD PostgreSQL17 на VPS. Дальнейшая правка этого раздела — только документация; sourceHash b4cb… и exact R0/R1/R2 неизменны.
-
-Текущий local gate VERIFIED/PASS. Целевой VPS, private env, TD Docker/PG17, HTTPS, backup restore, браузерные сохранения и первая игра до/после на общем сервере ещё не проверены; server operation_status=NOT_STARTED, server gate=BLOCKED из-за отсутствующего канала доступа. Следующее действие исполнителя с SSH-доступом: выполнить обследование и установку по `deploy/last-throne/README.md`, затем публичную QA и probe/build/publish автомата. Сохранённый художественный замысел и профиль исходного браузерного R2 не изменены. Дальнейшие обычные A/B updates идут через original CLI без перезапуска runtime; первоначальная установка/one-time R0/R1 upgrade этим обещанием не подменяется.

@@ -1,12 +1,8 @@
-# Last Throne — canonical backend source R3
-
-Это единственный редактируемый core/server/db для TD. Web находится в frontend repository `games/last-throne/web`. Ready archives и production dependencies в Git не хранятся.
-
-Workspace собирает `deploy/last-throne/assemble.mjs` из canonical back/front и распакованного Last-Throne-R3.zip. Оператор готовит команды первой установки, перехода R0/R1 или обычного R2→R3 без исполнения на сервере. Generated workspace/private env не коммитятся.
-
-Команды и границы: [deploy/last-throne/README.md](../../deploy/last-throne/README.md). README ниже описывает полный workspace, а не изолированный backend checkout.
-
 # Последний трон — R3
+
+Текущее обновление камеры — `r3-content-002`: утверждённый более близкий ракурс с углом около 35°, кадрирование игрового поля и целый Древний справа. Это обновление клиента при прежних core/content/save4/API; exact `r3-001` сохранён для отката. На существующем R3 сервере `content r3-content-002` оставляет API `r3-001` и runtime-контейнер работающими. Canonical assembler и режим `camera-r3` описаны в backend `deploy/last-throne/README.md`; в готовом пакете этот helper находится в `repository-integration/backend/`.
+
+После переключения launcher новая партия открывает новый ракурс. Продолжение старой партии по прежнему контракту использует закреплённый exact клиент, включая прежнюю камеру; открытые вкладки автоматически не заменяются.
 
 Браузерная tower defence в мире Доты: три линии, 15 волн и пять героев — Pudge, Undying, Rubick, Shadow Shaman, Sniper. Защита: баллиста, магическая башня, тотем замедления. Квадратные фундаменты зданий и круглые позиции героев различаются; цена и preview показываются до подтверждения. Командиры волн5/10/15 выполняют осаду, обход и магическое усиление.
 
@@ -27,10 +23,10 @@ npm run dev
 
 Открыть http://127.0.0.1:4173/td/. Dev создаёт immutable r3-dev-<timestamp>, persistent PGlite в .local/database и хранит сборки в .local/releases. Это локальная разработка; production использует отдельную PostgreSQL17. Авторитетное хранение — scalar typed EAV, новые миграции аддитивны;001–006 неизменны.
 
-Готовая поставка содержит releases/r3-001, exact r2-001/r1-002/r0-002 и production-зависимости. Запуск готового клиента:
+Готовая поставка содержит releases/r3-content-002, exact r3-001/r2-001/r1-002/r0-002 и production-зависимости. Запуск готового клиента:
 
 ```sh
-RELEASE_ID=r3-001 DEV_RELEASES_DIR=releases npm run dev
+RELEASE_ID=r3-content-002 DEV_RELEASES_DIR=releases npm run dev
 ```
 
 Проверки:

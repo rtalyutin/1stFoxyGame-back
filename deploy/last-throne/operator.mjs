@@ -48,6 +48,7 @@ function rolesSql(role) {
   return `-- No passwords in this file. Run as the dedicated Last Throne owner.\nDO $td_role$\nDECLARE r record;\nBEGIN\n SELECT * INTO r FROM pg_roles WHERE rolname='${role}';\n IF NOT FOUND THEN\n  CREATE ROLE "${role}" LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;\n ELSE\n  IF r.rolsuper OR r.rolcreatedb OR r.rolcreaterole OR r.rolinherit OR NOT r.rolcanlogin THEN\n   RAISE EXCEPTION 'API role has incompatible privileges';\n  END IF;\n  IF EXISTS(SELECT 1 FROM pg_namespace WHERE nspname='last_throne' AND nspowner=r.oid)\n   OR EXISTS(SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='last_throne' AND c.relowner=r.oid)\n   OR EXISTS(SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='last_throne' AND p.proowner=r.oid)\n   OR EXISTS(SELECT 1 FROM pg_database WHERE datname='last_throne' AND datdba=r.oid)\n   OR EXISTS(SELECT 1 FROM pg_auth_members WHERE member=r.oid) THEN\n   RAISE EXCEPTION 'API role must have no ownership or role memberships';\n  END IF;\n END IF;\nEND\n$td_role$;\n`;
 }
 export function commandPlan({ staging, output, envFile, runtimeDir, mode, config }) {
+  if (mode === 'camera-r3') return cameraPlan({ staging, runtimeDir, config });
   if (mode === 'upgrade-r2') return r2UpgradePlan({ staging, output, runtimeDir, config });
   const { values: env, apiRole, port } = config;
   const c = 'docker compose --project-directory "$TASK_RUNTIME_DIR" --env-file "$TASK_RUNTIME_DIR/ops/.env" -f "$TASK_RUNTIME_DIR/ops/compose.yml"';
@@ -82,6 +83,7 @@ export function commandPlan({ staging, output, envFile, runtimeDir, mode, config
   lines.push(`${c} exec -T runtime node ops/cli.mjs update r3-001`, `${c} exec -T runtime node ops/cli.mjs status`,
     `curl --fail --silent --show-error --connect-timeout 3 --max-time 10 ${q(`http://127.0.0.1:${port}/td/api/v1/ready`)}`,
     `curl --fail --silent --show-error --connect-timeout 3 --max-time 10 ${q(`http://127.0.0.1:${port}/td/api/v1/bootstrap?clientReleaseId=r3-001`)}`,
+    ...cameraSteps({ staging, config, c }),
     '# STOP: install/verify only the TD HTTPS Nginx route manually, then perform public QA before enabling the hub card.');
   return lines.join('\n') + '\n';
 }
@@ -107,13 +109,41 @@ function r2UpgradePlan({ staging, output, runtimeDir, config }) {
     `${c} exec -T runtime node ops/cli.mjs update r3-001`, `${c} exec -T runtime node ops/cli.mjs status`,
     `curl --fail --silent --show-error --connect-timeout 3 --max-time 10 ${q(`http://127.0.0.1:${port}/td/api/v1/ready`)}`,
     `curl --fail --silent --show-error --connect-timeout 3 --max-time 10 ${q(`http://127.0.0.1:${port}/td/api/v1/bootstrap?clientReleaseId=r3-001`)}`,
+    ...cameraSteps({ staging, config, c }),
     '# Perform public QA and retained-client saves before activating the hub. Pair rollback to R2 is unsafe for save4.'
   ].join('\n') + '\n';
 }
 
+function cameraSteps({ staging, config, c }) {
+  const statusGuard = 'let x="";for await(const c of process.stdin)x+=c;const s=JSON.parse(x);if(s.api?.releaseId!=="r3-001"||s.selection?.apiReleaseId!=="r3-001"||!["complete","recovered"].includes(s.journal?.phase))throw Error("Camera delivery requires consistent selected/live R3 API001 and completed journal");';
+  const versionGuard = 'let x="";for await(const c of process.stdin)x+=c;const v=JSON.parse(x);if(v.releaseId!=="r3-001"||v.versions?.backend!=="r3-api-7b084f31d98e7e6f")throw Error("Camera delivery API/backend mismatch");';
+  const postStatusGuard = statusGuard + 'if(s.selection.clientReleaseId!=="r3-content-002")throw Error("Camera durable client readback mismatch");';
+  const bootstrapGuard = 'let x="";for await(const c of process.stdin)x+=c;const b=JSON.parse(x);const v=b.versions;if(b.clientReleaseId!=="r3-content-002"||b.apiReleaseId!=="r3-001"||v?.backend!=="r3-api-7b084f31d98e7e6f"||v.core!=="r3-core-1"||v.content!=="r3-content-1"||v.metadataSchema!=="r3-meta-1"||v.saveFormat!==4||v.api!==1)throw Error("Camera bootstrap pin mismatch");';
+  const pointerGuard = 'let x="";for await(const c of process.stdin)x+=c;const p=JSON.parse(x);if(p.releaseId!=="r3-content-002"||p.clientEntry!=="web/index.html")throw Error("Camera pointer readback mismatch");';
+  const curl = path => `curl --fail --silent --show-error --connect-timeout 3 --max-time 10 ${q(`http://127.0.0.1:${config.port}${path}`)}`;
+  return [
+    '# Camera-only client002, unchanged API001. No migration, image rebuild or API restart.',
+    `[ ! -e "$TASK_RELEASES_DIR/r3-content-002" ] || { echo 'Camera candidate already exists; inspect journal and pointer before retrying.' >&2; exit 1; }`,
+    `${c} exec -T runtime node ops/cli.mjs status | node --input-type=module -e ${q(statusGuard)}`,
+    `${curl('/td/api/v1/version')} | node --input-type=module -e ${q(versionGuard)}`,
+    `node ${q(path.join(staging, 'ops/install-release.mjs'))} ${q(path.join(staging, 'releases/r3-content-002'))} "$TASK_RELEASES_DIR"`,
+    `${c} exec -T runtime node ops/cli.mjs content r3-content-002`,
+    `${c} exec -T runtime node ops/cli.mjs status | node --input-type=module -e ${q(postStatusGuard)}`,
+    `${curl('/td/current.json')} | node --input-type=module -e ${q(pointerGuard)}`,
+    `${curl('/td/api/v1/bootstrap?clientReleaseId=r3-content-002')} | node --input-type=module -e ${q(bootstrapGuard)}`,
+  ];
+}
+function cameraPlan({ staging, runtimeDir, config }) {
+  const c = 'docker compose --project-directory "$TASK_RUNTIME_DIR" --env-file "$TASK_RUNTIME_DIR/ops/.env" -f "$TASK_RUNTIME_DIR/ops/compose.yml"';
+  const guard = 'const fs=require("node:fs");const s=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));if(s.apiReleaseId!=="r3-001")throw Error("camera-r3 requires the durable R3 API001 selection");';
+  return ['#!/bin/sh', 'set -eu', '# Existing R3 runtime and first game stay in service.',
+    `TASK_RUNTIME_DIR=${q(runtimeDir)}`, `TASK_RELEASES_DIR=${q(config.values.TD_RELEASES_DIR)}`, `TASK_STATE_DIR=${q(config.values.TD_STATE_DIR)}`,
+    `node -e ${q(guard)} "$TASK_STATE_DIR/selection.json"`, ...cameraSteps({ staging, config, c })].join('\n') + '\n';
+}
+
 export async function prepareOperator({ staging, envFile, output, runtimeDir = '/opt/last-throne/runtime', mode, ackBackupBaseline = false, reviewedEnv = false }) {
   if (Number(process.versions.node.split('.')[0]) !== 24) throw new Error('Node 24 is required');
-  if (!['first-install', 'upgrade-r0-r1', 'upgrade-r2'].includes(mode)) throw new Error('Explicit mode required: first-install, upgrade-r0-r1 or upgrade-r2');
+  if (!['first-install', 'upgrade-r0-r1', 'upgrade-r2', 'camera-r3'].includes(mode)) throw new Error('Explicit mode required: first-install, upgrade-r0-r1, upgrade-r2 or camera-r3');
   if (!ackBackupBaseline || !reviewedEnv) throw new Error('Explicit backup/baseline and reviewed-env acknowledgements required');
   const source = await existingDirectory(cleanPath(staging, 'staging')); const env = cleanPath(envFile, 'env file'); const target = cleanPath(output, 'output');
   const runtime = cleanPath(runtimeDir, 'runtime directory');
@@ -130,7 +160,7 @@ export async function prepareOperator({ staging, envFile, output, runtimeDir = '
     for (const name of ['ops', 'launcher']) await cp(path.join(source, name), path.join(stage, 'runtime', name), { recursive: true, dereference: false });
     await writeFile(path.join(stage, 'roles.sql'), rolesSql(config.apiRole));
     await writeFile(path.join(stage, 'commands.sh'), script, { mode: 0o600 });
-    const summary = { status: 'PREPARED', execution: 'NOT_STARTED', mode, sourceHash: SOURCE_HASH, releaseId: 'r3-001',
+    const summary = { status: 'PREPARED', execution: 'NOT_STARTED', mode, sourceHash: SOURCE_HASH, releaseId: RELEASE_ID, apiReleaseId: 'r3-001',
       envCheck: 'syntax/mode only; operator acknowledged review', backupCheck: 'operator acknowledgement; restore not executed by this tool',
       operations: 'commands only; no Docker, SSH, SQL, Nginx or GitHub calls were made', commands: path.join(target, 'commands.sh') };
     await writeFile(path.join(stage, 'plan.json'), JSON.stringify(summary, null, 2) + '\n');
