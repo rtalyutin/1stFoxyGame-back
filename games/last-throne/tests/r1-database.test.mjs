@@ -22,7 +22,7 @@ const result=(seed=0)=>({outcome:'defeat',lastCompletedWave:0,wave:1,simTick:25,
 const error=code=>e=>e.code===code;
 
 test('additive R1 migration publishes complete typed catalog and preserves R0',async()=>{
- assert.deepEqual(await migrate(pool),[]);assert.equal((await query('SELECT count(*)::int n FROM last_throne.schema_migrations')).rows[0].n,6);
+ assert.deepEqual(await migrate(pool),[]);assert.equal((await query('SELECT count(*)::int n FROM last_throne.schema_migrations')).rows[0].n,8);
  assert.equal((await readContent(pool,'r0-content-1')).entities[0].parameters.gameplay_available,false);
  const content=await readContent(pool,'r1-content-1');assert.deepEqual(contentRows(parseContentProjection(content)).sort((a,b)=>`${a.type}:${a.code}`.localeCompare(`${b.type}:${b.code}`)),contentRows(defaultR1Content).sort((a,b)=>`${a.type}:${a.code}`.localeCompare(`${b.type}:${b.code}`))); 
  const hashes=(await query("SELECT projection_hash FROM last_throne.content_releases WHERE id='r1-content-1'")).rows[0];assert.equal(hashes.projection_hash,digest(content));

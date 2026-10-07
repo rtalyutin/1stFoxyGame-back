@@ -3,7 +3,7 @@ import { randomBytes, createHash } from 'node:crypto';
 import { join } from 'node:path';
 import { verifyRelease, acceptsClientRelease } from '../ops/artifacts.mjs';
 import { readContent, canonicalJson } from '../db/content.mjs';
-import { createGameStore } from '../db/game-store.mjs';
+import { createGameStore } from '../db/game-store-r3.mjs';
 import { runtimeForManifest, runtimeForRun, technicalManifest } from './game-versions.mjs';
 import {
   idPattern, revisionSchema, integerSchema, requestIdSchema, runParams, versionsSchema, statisticsSchema,

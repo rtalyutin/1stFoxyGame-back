@@ -1,27 +1,11 @@
-# Local wrapper verification — 2026-10-05
+# R3 wrapper verification — 07.10.2026
 
-Scope: paired-source assembler and command-plan preparation only. Server installation, GitHub/SSH/Docker/PostgreSQL/Nginx execution: **NOT_STARTED** by these helpers.
+Node24.19.0/Linux. Scope: exact paired assembly and executable command guards; target VPS NOT_STARTED.
 
-Author check on Node24.19.0/Linux:
+Actual assembly preserves sourceHash2233389d406901529b55b5cf7c9ecfef7b1c5726c12cbf0b0495bae7349bfadb and all four ready manifests. r3-001 SHAdefab06551d52e9cc71c0a6d56c769e9030e51649756cecfba659a70c5acfc63;2294files. R0/R1/R2 retained2200/2266/2279files with unchanged exact manifests.
 
-```sh
-TD_TEST_STAGING=/workspace/scratch/a8857bd330a9/integration/back/deploy/last-throne/.workspaces/r2-001 \
-  node --test integration/back/deploy/last-throne/tests/wrappers.node.mjs
-```
+`TD_TEST_STAGING=<assembled r3-001> node --test deploy/last-throne/tests/wrappers.node.mjs`:13PASS,0FAIL,0SKIP. Real-stage case prepares first-install commands without invoking Docker or revealing synthetic env values. Generated shell passes `/bin/sh -n`. Negative migration fixture executes fake migration exit23 and proves no install/update and R2 remains selected. R2 upgrade plan contains no image build, compose up/restart or Nginx restart; migration/grants occur before exposing immutable R3. Startup timeout protects the older R0/R1 maintenance path.
 
-Result: **11 PASS, 0 FAIL, 0 SKIP**. `node --check` passed for assemble.mjs, operator.mjs and lib.mjs. The preparation CLI test uses a fake Docker executable and confirms it is not invoked; stdout/stderr do not contain synthetic env secrets. Generated shell commands pass `/bin/sh -n`.
+Initial root real-stage run began before atomic assembly finished and got SETUP_FAIL ENOENT; original log retained in ready evidence. Correct ordered repeat passed.
 
-The added startup-failure test executes the generated upgrade script with fake Docker, Node, sleep, install, cp and curl executables in a private temporary directory. It reaches runtime startup, receives 90 failed control-status probes, exits nonzero with `TD control readiness timeout`, and never installs R2 in the watched parent or calls `update r2-001`/curl. Fake sleep avoids the real delay; the shell simulation took 223ms. No real Docker, SQL, network or target-host action was executed. Startup wait order is also checked between `up -d runtime` and R2 exposure/update.
-
-Real assembly from canonical back/front and original ready-root completed, with before/after source and file inventory checks. Current canonical source and original ready-root were reverified after wrapper work:
-
-| Identity | SHA256 / result |
-| --- | --- |
-| Paired TD sourceHash | `b4cb38f2477b406608f648cb72e5c1c68a4aed8fd4f3fa84a88637e70d4b9bf8` |
-| r0-002 manifest | `40bdbb68f736c3f7f6bde163dceacfddd750bf8f38c6038729760585806f0cc6`; 2200 inventory files PASS |
-| r1-002 manifest | `daf850af834de99afc4fa31ba86070b47e4ce1decfef71befa2970e5b4066823`; 2266 inventory files PASS |
-| r2-001 manifest | `dafc60169b772214823799f89fc623d3b4f1f02ab0e69710f57e6ee57aa54dbf`; 2279 inventory files PASS |
-
-The test fixtures exercise rejected substituted web, symlinks, unsafe/existing/concurrent output, mutated and rehashed old archives, private env/mode gates and upgrade command order. These are author checks, not independent production acceptance. No new game/API/DB functional runs were performed. Backup restoration, real roles/permissions, Docker/PG health, resource limits, TLS/Origin, public gameplay and first-game regression remain target-host checks.
-
-Generated `.workspaces`, `.prepared`, `.test-work`, temporary directories, ready releases and private env must remain outside Git. The backend README alone was edited within canonical source; it is outside the original sourceHash inventory. Original core/server/db/ops/scripts/launcher/web and immutable archives remain unchanged.
+These wrapper tests simulate external executables; they do not establish real Docker/PostgreSQL/Nginx/TLS, backup recovery, public availability or first-game before/after. Delivery core tests separately execute the actual archived R2 supervisor locally. Dedicated GitHub CI run37576984668 separately executed PostgreSQL17.11 with11/11storage PASS and43/43core/HTTP/embedded PASS. It uses a separate ephemeral TD database and independent sessions; it is not a VPS capacity/backup check. CI wrappers12PASS/1SKIP because readyarchives are intentionally outside Git; the local real-stage result above covers that case. Generated .workspaces/.prepared/private env/releases/dependencies stay outside Git.

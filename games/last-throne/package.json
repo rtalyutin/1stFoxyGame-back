@@ -1,6 +1,6 @@
 {
   "name": "last-throne",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -13,9 +13,10 @@
     "build": "node scripts/build.mjs",
     "migrate": "node scripts/migrate.mjs",
     "start": "node ops/supervisor.mjs",
-    "test:browser": "node tests/browser-r2.mjs",
+    "test:browser": "node tests/browser-r3.mjs",
     "test:browser:r0": "node tests/browser-smoke.mjs",
-    "test:browser:r1": "node tests/browser-r1.mjs"
+    "test:browser:r1": "node tests/browser-r1.mjs",
+    "test:browser:r2": "node tests/browser-r2.mjs"
   },
   "dependencies": {
     "fastify": "5.12.5",

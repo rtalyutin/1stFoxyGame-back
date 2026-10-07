@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+
 /** Read immutable published content from EAV truth, including explicit false/zero. */
 export async function readContent(pool, version) {
   const release = await pool.query(`SELECT id, content_version, metadata_schema_version, schema_version,
@@ -31,7 +33,7 @@ export async function readContent(pool, version) {
     if (row.multiple) (parameters[row.parameter_code] ??= []).push({ ordinal: row.ordinal, value });
     else parameters[row.parameter_code] = value;
   }
-  return {
+  const projection = {
     contentVersion: selected.content_version,
     metadataSchemaVersion: selected.metadata_schema_version,
     schemaVersion: selected.schema_version,
@@ -39,6 +41,11 @@ export async function readContent(pool, version) {
     sourceRevision: selected.source_revision,
     entities: [...entities.values()],
   };
+  if (selected.core_compatibility.includes('r3-core-1')
+    && createHash('sha256').update(canonicalJson(projection)).digest('hex') !== selected.projection_hash) {
+    throw Object.assign(new Error('CONTENT_VERSION_UNAVAILABLE'), { code: 'CONTENT_VERSION_UNAVAILABLE', statusCode: 503 });
+  }
+  return projection;
 }
 
 /** Exact immutable metadata manifest, independent of SQL column order/status timestamps. */

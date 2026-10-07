@@ -1,0 +1,581 @@
+{
+  "recordedAt": "2026-10-07T06:07:31.222Z",
+  "producer": "/root/spec_verifier",
+  "scope": "R3 exact artifact/source identity and retained archives",
+  "node": "v24.19.0",
+  "status": "PASS",
+  "retained": [
+    {
+      "releaseId": "r0-002",
+      "manifestSha256": "40bdbb68f736c3f7f6bde163dceacfddd750bf8f38c6038729760585806f0cc6",
+      "sourceHash": "62ab2127e3c88f1d76b530beb9e7d4e34b44a1df531b07d748a9573290e6227a",
+      "versions": {
+        "frontend": "r0-web-62ab2127e3c8",
+        "backend": "r0-api-62ab2127e3c8",
+        "core": "r0-core-1",
+        "content": "r0-content-1",
+        "metadataSchema": "r0-meta-1",
+        "saveFormat": 1,
+        "api": 1
+      },
+      "fileCount": 2200
+    },
+    {
+      "releaseId": "r1-002",
+      "manifestSha256": "daf850af834de99afc4fa31ba86070b47e4ce1decfef71befa2970e5b4066823",
+      "sourceHash": "62d3aea6c2b7ed50246e531343913aeb1a2e08ee807c77338838122f4818c9ee",
+      "versions": {
+        "frontend": "r1-web-4d1ebc495b27e228",
+        "backend": "r1-api-0873c6352ef7a1d9",
+        "core": "r1-core-1",
+        "content": "r1-content-1",
+        "metadataSchema": "r1-meta-1",
+        "saveFormat": 2,
+        "api": 1
+      },
+      "fileCount": 2266
+    },
+    {
+      "releaseId": "r2-001",
+      "manifestSha256": "dafc60169b772214823799f89fc623d3b4f1f02ab0e69710f57e6ee57aa54dbf",
+      "sourceHash": "b4cb38f2477b406608f648cb72e5c1c68a4aed8fd4f3fa84a88637e70d4b9bf8",
+      "versions": {
+        "frontend": "r2-web-cf9847f563bf04b1",
+        "backend": "r2-api-058b93c6ed7eec48",
+        "core": "r2-core-1",
+        "content": "r2-content-1",
+        "metadataSchema": "r2-meta-1",
+        "saveFormat": 3,
+        "api": 1
+      },
+      "fileCount": 2279
+    }
+  ],
+  "legacySources": [
+    [
+      "core/content-r1.ts",
+      "0b7d1378ba73b4a5b6cc591f267974489d86b554b17cc985ce1f03cea9eb1188"
+    ],
+    [
+      "core/game-core.ts",
+      "55e654c94ea59274a69aecb471d06b5fbe0f144e89031d774c3925a29c34b54b"
+    ],
+    [
+      "core/content-r2.ts",
+      "e7881e6ab79e88948004134106b4de7faa530250254b02e5ec88a16eebd18e3b"
+    ],
+    [
+      "core/game-core-r2.ts",
+      "79a2a61b447754010230bdd0011d2440c0f69c5dbcf780215f69cbe4d2e20f72"
+    ],
+    [
+      "db/migrations/001_typed_eav.sql",
+      "5549ae576053169a1b8465dce890317b63578e7595faa514955b0cce5047d279"
+    ],
+    [
+      "db/migrations/002_r0_catalog.sql",
+      "9ae963350b205f78e3599cc1dc1d04afa349bc5d0f294082dd8ff23f9ed195dc"
+    ],
+    [
+      "db/migrations/003_r1_persistence.sql",
+      "0646e160ce8cadef683f93c2569c74a0bb6cd8e571066d4ed5a602af62b62250"
+    ],
+    [
+      "db/migrations/004_r1_catalog.sql",
+      "d3c8822ed316e3ad4e7677eddf561e89804c2c70a99a552d3faa42761f6e009d"
+    ],
+    [
+      "db/migrations/005_r2_persistence.sql",
+      "4a501f6d1aff5f6e5270e1aeac7ce95183c2d71cdcd48752d393293890c8d798"
+    ],
+    [
+      "db/migrations/006_r2_catalog.sql",
+      "55ba4704ea5746a314b8b2f75eeb353aa37004c479bf2428d0d9bb06ae151193"
+    ]
+  ],
+  "inputs": {
+    "docs/R3-CONTRACT.md": "0562c4fa5d278e797e163c8ac419b2bfb60efb907c2923c98182c5971690bb13",
+    "docs/Last-Throne-TZ-v0.5.md": "cec0b832448455558791db8a148e441f47c1719dcc80c3afc080e7e50557f8e0",
+    "docs/FEATURE_HANDOFF-1.md": "880ed9d2dc0004f39250f4a5c3739840cc1f9c4b37edf78b652dc787f5aa44e4"
+  },
+  "artifact": {
+    "releaseId": "r3-001",
+    "manifestSha256": "defab06551d52e9cc71c0a6d56c769e9030e51649756cecfba659a70c5acfc63",
+    "sourceHash": "2233389d406901529b55b5cf7c9ecfef7b1c5726c12cbf0b0495bae7349bfadb",
+    "versions": {
+      "frontend": "r3-web-603aab8bfd082c86",
+      "backend": "r3-api-7b084f31d98e7e6f",
+      "core": "r3-core-1",
+      "content": "r3-content-1",
+      "metadataSchema": "r3-meta-1",
+      "saveFormat": 4,
+      "api": 1
+    },
+    "fileCount": 2294
+  },
+  "sources": [
+    [
+      "core/content-r1.ts",
+      "0b7d1378ba73b4a5b6cc591f267974489d86b554b17cc985ce1f03cea9eb1188"
+    ],
+    [
+      "core/content-r2.ts",
+      "e7881e6ab79e88948004134106b4de7faa530250254b02e5ec88a16eebd18e3b"
+    ],
+    [
+      "core/content-r3.ts",
+      "c29a81405b72ca20f0128d37d1f785daf9a29a4eac481a3cf015a2eacd65bfc4"
+    ],
+    [
+      "core/game-core-r2.ts",
+      "79a2a61b447754010230bdd0011d2440c0f69c5dbcf780215f69cbe4d2e20f72"
+    ],
+    [
+      "core/game-core-r3.ts",
+      "0bca6bef736d820af9ad2d2c1c86df5461bc82cec581aa736341a9ed59ecd99d"
+    ],
+    [
+      "core/game-core.ts",
+      "55e654c94ea59274a69aecb471d06b5fbe0f144e89031d774c3925a29c34b54b"
+    ],
+    [
+      "db/build-r1-seed.mjs",
+      "21a41740babf3b47b6d5a4fb9fe4ca4158193495574714e65697bb35125400d4"
+    ],
+    [
+      "db/build-r2-seed.mjs",
+      "ca39d095a233c49f82d875b5a59cd421c303614a8061a085af35b1b3f1e79c09"
+    ],
+    [
+      "db/build-r3-persistence.mjs",
+      "37534f674da7e734f5ce4217b2138bd11c47ae0c16f6a112705cc2e5c65d614c"
+    ],
+    [
+      "db/build-r3-seed.mjs",
+      "ac5c8fcb3cedff304bffecb1552b87602e96de1e9beaba89130c1b923bad3b32"
+    ],
+    [
+      "db/content.mjs",
+      "78aaa48bb8126f415ce1153f1a9f4dc35c74c267f1c6c41ad102ad1937e96491"
+    ],
+    [
+      "db/game-store-r3.mjs",
+      "b2371928c50e7976702bc72b1e2af7dfa54faedb247f0322025fbfe339c03e27"
+    ],
+    [
+      "db/game-store.mjs",
+      "630ed4ef7273ed52f6c857d12335005991a732760f3d0cd9578e585b697d5ef1"
+    ],
+    [
+      "db/migrations/001_typed_eav.sql",
+      "5549ae576053169a1b8465dce890317b63578e7595faa514955b0cce5047d279"
+    ],
+    [
+      "db/migrations/002_r0_catalog.sql",
+      "9ae963350b205f78e3599cc1dc1d04afa349bc5d0f294082dd8ff23f9ed195dc"
+    ],
+    [
+      "db/migrations/003_r1_persistence.sql",
+      "0646e160ce8cadef683f93c2569c74a0bb6cd8e571066d4ed5a602af62b62250"
+    ],
+    [
+      "db/migrations/004_r1_catalog.sql",
+      "d3c8822ed316e3ad4e7677eddf561e89804c2c70a99a552d3faa42761f6e009d"
+    ],
+    [
+      "db/migrations/005_r2_persistence.sql",
+      "4a501f6d1aff5f6e5270e1aeac7ce95183c2d71cdcd48752d393293890c8d798"
+    ],
+    [
+      "db/migrations/006_r2_catalog.sql",
+      "55ba4704ea5746a314b8b2f75eeb353aa37004c479bf2428d0d9bb06ae151193"
+    ],
+    [
+      "db/migrations/007_r3_persistence.sql",
+      "48ac723e26dae84f8ca094cfe0d1ebc6fe747fc93672925de68f38151a0d1bfc"
+    ],
+    [
+      "db/migrations/008_r3_catalog.sql",
+      "94309610338aa916f2b7c4d0f85aebbfe616bbe6742fa18adab478ce8c74b5e7"
+    ],
+    [
+      "db/r1-metadata.mjs",
+      "577cd9cb2577c384072969360bdb5409c0029a6f75a4c147918eb02cdc112a79"
+    ],
+    [
+      "db/r1-runtime-grants.sql",
+      "9872556902b9da8d09a9f3443a06e140745b6b93af576aedbd63b9ddd0bba46b"
+    ],
+    [
+      "db/r2-metadata.mjs",
+      "dcaa88777613a4bdf3bbecc0ddf284979a79795ac8d1895a954662392d5f5e58"
+    ],
+    [
+      "db/r2-runtime-grants.sql",
+      "7257167435e3260b873d2c454163e3d3f2b0fdbf4da8b52aa2df7cd30ab79815"
+    ],
+    [
+      "db/r3-metadata.mjs",
+      "42e199bad396c2ccc3671730d1ac92d30da36a27e0f5a256e35642d88de2c460"
+    ],
+    [
+      "db/r3-publication-guard.sql",
+      "d8d4498670ebaa0c2af9563bccde46cf73b5dafb7ae9ee66867f335072ef8668"
+    ],
+    [
+      "db/r3-runtime-grants.sql",
+      "83e62ebf0c18281e0c0709cd1763aaea9250348c611587415f91416e4893d2b7"
+    ],
+    [
+      "db/README.md",
+      "24b0f543c199019952a893b0573e6fe24ef01d76123bcb10d8ba728c18802262"
+    ],
+    [
+      "db/seed-r1.mjs",
+      "eea604c780584e1a48969ab8b5366a1ce5c1ce0bc9131f67c5c681be54141770"
+    ],
+    [
+      "db/seed-r2.mjs",
+      "09e2cf7bf470d25bd4660fce5949aeeb982047229fcae86dcefd6b70aa721f98"
+    ],
+    [
+      "db/seed-r3.mjs",
+      "a1d04edd78ff67f7fea4837836871c2da7202a457a2d3fcae6b989bb591c2f02"
+    ],
+    [
+      "launcher/index.html",
+      "7b6c80feb5df7a06970c9d20e04932eebeccc50b3837af74d1787f6e79878b6f"
+    ],
+    [
+      "ops/artifacts.mjs",
+      "f4ff1e0aa11e030e580183773bde253e5c6d18d3b3c3e830af838c6b43dcec51"
+    ],
+    [
+      "ops/cli.mjs",
+      "c1ec6e02acfc64c2aa98b43b3862a749445522823641f323b87e36028d820f6a"
+    ],
+    [
+      "ops/compose.yml",
+      "f6d10055898b1cbdf9bbe3a28f6f623814ac213dcd325c6a01386ee97e381872"
+    ],
+    [
+      "ops/Dockerfile",
+      "727495e8310ba6b21e8975cfa75b07514e55cab355991a55984956ae3e10eb18"
+    ],
+    [
+      "ops/env.example",
+      "2e7dc66935e9dae236c47b9e8703a334e74bef7c51d69818192b37d8c3557f5b"
+    ],
+    [
+      "ops/install-release.mjs",
+      "56e81e35f7cf897df23c63b4b83bb07318681cbc49808ecb8fa61f202293b4f3"
+    ],
+    [
+      "ops/migrate-release.mjs",
+      "2e42007798b12b3804677745f85dd0ac720e054c51ed1bbcda9ca70efc8f944c"
+    ],
+    [
+      "ops/nginx-td.conf.example",
+      "917c0671d9cc455c02ffd7b3a256b4bc0e68b0653bca1b94869a0da452f18b3e"
+    ],
+    [
+      "ops/publish-r0-content.mjs",
+      "617ce1c920c38d2423fefb3bb3fb965f56d4fde8d9e597bafd14b18d960cbce5"
+    ],
+    [
+      "ops/publish-r1-content.mjs",
+      "46484632652b55d3b1669f17829b1c746f457b842b6342e80dd9ba9e17de10b8"
+    ],
+    [
+      "ops/publish-r2-content.mjs",
+      "b97f656d61f1262ca0c550dcba1fbc6992871750eb3bf16819798cd454783a19"
+    ],
+    [
+      "ops/publish-r3-content.mjs",
+      "52718387f458a9593f4a2d1b3a19e1b33b70f4463830c4c42da24a38b392c5a5"
+    ],
+    [
+      "ops/RUNBOOK-R1.md",
+      "a6382fb9a2118178d54473728592c0cdcb88a7977960cad1b34b67bb7751471b"
+    ],
+    [
+      "ops/RUNBOOK-R2.md",
+      "a650335aa4268001f2c6a73a4f997f685f622a437471bb4b85e318e853ca6ca0"
+    ],
+    [
+      "ops/RUNBOOK-R3.md",
+      "58a7eb9c4462f74d3030051abbea61f456a04ed50d8da7b6c606f7862aca6814"
+    ],
+    [
+      "ops/RUNBOOK.md",
+      "190e0c40afd0e37848a61c7a73151f4bf79c112f7875ead58ea5063220e9835b"
+    ],
+    [
+      "ops/supervisor.mjs",
+      "7de89c4d3939adbd7975ff4f69e9022c7f1e479c07ff35b4fac3d8e898300df5"
+    ],
+    [
+      "package-lock.json",
+      "1ebdf1c42259c035fbac58d7915bf929052cc09819f12faff95276ec049f732f"
+    ],
+    [
+      "package.json",
+      "6486bf616a15fb9f4e37307cf296746285ce4bc12635ea46e4c38a0ab9a0cdc7"
+    ],
+    [
+      "scripts/build.mjs",
+      "f2731862cd6df6d8e233af97313705736a50ec15d2c17af066cfbaeda5357bc3"
+    ],
+    [
+      "scripts/dev.mjs",
+      "69681455fc811a0bc4e53e5a8f89504ea4a0efb55419fef872084d15597d8951"
+    ],
+    [
+      "scripts/migrate.mjs",
+      "4033cebebfc3cf1e849d0df706b924cc1409c4fa01082b6ce2e60ddf09edb3b2"
+    ],
+    [
+      "server/app.mjs",
+      "b16d51bd2cc165acb27c4a91a42736e63ff9d2f722a29345173436525e7c9ccb"
+    ],
+    [
+      "server/game-versions.mjs",
+      "db7177e2070e86e3d4431b877f782e992eddc0ded021a878ac1fd8b3de75eb39"
+    ],
+    [
+      "server/http-support.mjs",
+      "a2f8231f96fc998734824c5987dd7aa31c0584470ac4d85787d85f4c35b4ee3d"
+    ],
+    [
+      "server/index.mjs",
+      "6a6f91a59496da8696ed92835326f38006b4f754aa1adf02da3f9e8430ad937d"
+    ],
+    [
+      "server/openapi-r1.json",
+      "b0aca422486c7453fc49858bec7c724c78cbcf4d863b96475598b93be3cbe9cc"
+    ],
+    [
+      "server/openapi-r1.mjs",
+      "eeb21ab5d3f03b80bdaaaefd3627a7da43facebbf0aead5f11028a929dc9e454"
+    ],
+    [
+      "server/openapi-r2.json",
+      "bcc97fba4cc7e2fa2a3c7b4024ffcd6605215bccae49149c316b09cd021c5e0f"
+    ],
+    [
+      "server/openapi-r2.mjs",
+      "0eec1843b41ceb78ed76187b8e570cd5571f2fc5e8604dea0d2d3b3d2c5b5328"
+    ],
+    [
+      "server/openapi-r3.json",
+      "bfe84d6f630b4b4705b2b4b934a9d9f82abdc809e68dc32f500c87a7002f26b1"
+    ],
+    [
+      "server/openapi-r3.mjs",
+      "7509a97c3f5c1d88f3a2fa64f35e0f9ebdb8dc43fa0e130e3eaa3ca3832a4466"
+    ],
+    [
+      "web/index.html",
+      "b325cbd731c6783d0063c7c78b1b05d343164fd0dd8246e1239415cb7e4b310a"
+    ],
+    [
+      "web/src/audio.ts",
+      "0ff24055e6e3eb1c22c6e16bef85065248040908b9f1e6a043d3892e89e204d4"
+    ],
+    [
+      "web/src/main.ts",
+      "ad3ec632a7a5612585e5813f49fa726ad62f33ecbb2593cbd7a00ce66c23876e"
+    ],
+    [
+      "web/src/r3-panels.ts",
+      "c15d48d5fe0d22f4180558762dd78da6bbfd77e6906cc84e2384543596dae89c"
+    ],
+    [
+      "web/src/renderer.ts",
+      "1b998d3e1a62fb7ab655f479d9d6062d5a21b82ea3d320b3bb4160afad4007d0"
+    ],
+    [
+      "web/src/save-client.ts",
+      "ac444018be740d42c9ba56629034ab72af54b277da196c4b308cdc50aa11a250"
+    ],
+    [
+      "web/src/style.css",
+      "f8e4a85b76dd6f1f70871b17fef631834e590a33c95c06d8bb42c5dcbde96ff0"
+    ]
+  ],
+  "computedSourceHash": "2233389d406901529b55b5cf7c9ecfef7b1c5726c12cbf0b0495bae7349bfadb",
+  "testInventory": [
+    [
+      "api.test.mjs",
+      "dccb5d88ba6a056b95485e7f1cab298a0c571b5ec08ebb62c74e699bde79bd32"
+    ],
+    [
+      "browser-r1.mjs",
+      "aebcc6bd8b7db77036330a25eec607d378d8fab2da3dd547904790954aa65c27"
+    ],
+    [
+      "browser-r2.mjs",
+      "9ab05ac1d5d46086f66e976bb5e4713138cc485454f526b329355a19158afd53"
+    ],
+    [
+      "browser-r3.mjs",
+      "75112b50095346d22698afae97cd85cfa25035b0c131da0a39e95caa268109b2"
+    ],
+    [
+      "browser-smoke.mjs",
+      "45a0051d9b7576ba1d97680572161b24ada8451e0d51cdee1d4ca6d4b1cbd1bf"
+    ],
+    [
+      "core-r1.test.mjs",
+      "07ad73507de3fe99af46ab0a12db579a25d27c3d2452fc34eb95716c75654a5e"
+    ],
+    [
+      "core-r2-party-proof.test.mjs",
+      "6e4181b2f6d7f6ed1bb958cec984534d01bee7f94709903147891773c9ce6fb5"
+    ],
+    [
+      "core-r2-regression.test.mjs",
+      "a9d20b462c2fda4c4948afa43536c460bc09114186842ed27c5bee9cac1a4caf"
+    ],
+    [
+      "core-r2-spells.test.mjs",
+      "07cd5c61adb9b3de464bbb58f7448e3af9dd321e4371a369851464df06f77956"
+    ],
+    [
+      "core-r3-party-proof.test.mjs",
+      "c774eb1881349988fa0de2cc4a55429efa39d9a76b541b42966c75120f2c4a7f"
+    ],
+    [
+      "core-r3-rules.test.mjs",
+      "830719ef903ede5704ac80de4aa11a0e8a1b20256ca3bf2cb2712f36cbca5603"
+    ],
+    [
+      "database-r3-storage.test.mjs",
+      "7eb9607048bc20ca0798c7816b3a1b8fffb5150d58d333da1f44a69439cc2927"
+    ],
+    [
+      "database.test.mjs",
+      "1b70191635b30f0b407c29b66c24fd6a251c628df064214fc3f5c8aedd0012d1"
+    ],
+    [
+      "delivery-r1.test.mjs",
+      "fc16b081e684c922566153661d1978537d23edfbd1ca036de4da25ba4656f4a2"
+    ],
+    [
+      "delivery-r2.test.mjs",
+      "e8c8c6dcf2f7de75e48824bcbed7d546c1aa0f4429ccdb04caf4067df17390e0"
+    ],
+    [
+      "delivery-r3.test.mjs",
+      "de2f15d2c1ad607679dd0f89817c6d72ec153bd1d1e756c5a2d0dab703d6e534"
+    ],
+    [
+      "delivery.test.mjs",
+      "8f530230b60a7c6a7045e4b5f88e0e18a6176afe86fd52c6b62bdded078b60b5"
+    ],
+    [
+      "fixtures.mjs",
+      "cb0c241469cb120460dbe347e860838c1a282f145dab4c3132e5cf0246bab0ad"
+    ],
+    [
+      "qa-browser-r1.mjs",
+      "ee41ca1a071655cff1faf9d3c0a32aea464879755cd921544764eabb7da02f50"
+    ],
+    [
+      "qa-r1.test.mjs",
+      "73b511edf68fd2c94f7797979376be1b44a8313d244404d8a603777edc19acd1"
+    ],
+    [
+      "qa-r2-api.test.mjs",
+      "f730e37262552161373bd2712169333acfd8a5bf2ea4bc71fc17d2a0d0676023"
+    ],
+    [
+      "qa-r2-browser.mjs",
+      "8ae24627baf0f9f007bf6aaa6a96011352d1837a113250f92d739e0800372797"
+    ],
+    [
+      "qa-r2-compat-browser.mjs",
+      "1d31ed1d614046c437b8ebcb11823ec8d4a7e5225467c58522a1d95770b4f59b"
+    ],
+    [
+      "qa-r2-core.test.mjs",
+      "5b0b0d54293a8fc5358c51da75dcfccdd09e4f5504da8d8424902af33e54a771"
+    ],
+    [
+      "qa-r2-identity.mjs",
+      "1624a43fdbf8228d7bb63a72df52ee7036d65c2edf11bcaf599ef6af35b42a19"
+    ],
+    [
+      "qa-r2-low-browser.mjs",
+      "34099dc986d4da10c2eb94e15b3018aaf14bf785847dda2d1601ca7bd3e1a26e"
+    ],
+    [
+      "qa-r3-activation.mjs",
+      "203ee2d408bdb33cdceb2612e5e4b07700ba0e2f72333cbf78afa1192fed42b7"
+    ],
+    [
+      "qa-r3-api.test.mjs",
+      "8fd20b97832686dd52f91a637f859e711ad6288d10c7aea900e43b807fdeda7c"
+    ],
+    [
+      "qa-r3-browser.mjs",
+      "a58fe40000f498404af444b789d1f15a014974e32adfc1c629c87a1ee953b5d4"
+    ],
+    [
+      "qa-r3-compat-browser.mjs",
+      "5f583473bc62564da3b43d37a9955cb927339247fd3b4fc5f3de927a92b2f95f"
+    ],
+    [
+      "qa-r3-core.test.mjs",
+      "09decd2037d22843c529f1bcbc72b74857688a209013d24ec48d68c903c41fc9"
+    ],
+    [
+      "qa-r3-identity.mjs",
+      "1937795177c769153a83eb35128a76965ced44b04f842115495022ff7d90f904"
+    ],
+    [
+      "qa-r3-lifecycle-browser.mjs",
+      "e00e3334ac07df99990a1733219f75ece09bd68e850a69eafe8b82b73a92f2fa"
+    ],
+    [
+      "qa-r3-party-browser.mjs",
+      "afdda05e961007fe66fff142bf93f89cc8a34537e7b269cafa4af12e5b210165"
+    ],
+    [
+      "qa-r3-timeout-replay.mjs",
+      "10b20814528d790558517f1a46d26f014744ce02512b4bea065a95af6d8f801a"
+    ],
+    [
+      "r1-api.test.mjs",
+      "f8d6b9e4e908a6e3dab28b0ec774d13eb8cbe6fe327e273ba91c44852b4f3849"
+    ],
+    [
+      "r1-database.test.mjs",
+      "4dee626410d604beff227dc4445a16504f6e7732f297279a019692334cecc8c6"
+    ],
+    [
+      "r2-db-api-http.test.mjs",
+      "7cf356968522e41a21da7efd7a45f62635efa5894a2bd58d21b6ac7cada3a6a6"
+    ],
+    [
+      "r2-db-api-storage.test.mjs",
+      "2ec638ed9f6f3212421cf42911dd34e9e287266299bdea1ae606f06efa362cea"
+    ],
+    [
+      "renderer-r2-probe.mjs",
+      "efc4977f383ba2c4d3a5ee5b574fdb7157c5bcb3cc4dd5b312f2ebe50824111c"
+    ],
+    [
+      "renderer-r3-probe.mjs",
+      "054f28024bd42127858120c672138e4e8826de392f496a0b2dd403f6fff878a2"
+    ],
+    [
+      "save-client-r1.test.mjs",
+      "795add58953dba2dca77976ce49d0088194d77f683042ca5e8d0f91753153600"
+    ],
+    [
+      "server-r3-http.test.mjs",
+      "27c4b9478677abf662dece3aa93435695a0642e871629ead59971cd74e827976"
+    ]
+  ]
+}

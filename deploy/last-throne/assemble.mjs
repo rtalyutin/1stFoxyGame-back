@@ -1,7 +1,7 @@
 import { cp, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { SOURCE_HASH, RELEASE_HASHES, BACK_DIRS, BACK_FILES, cleanPath, existingDirectory, noSymlinkPath, freshOutput, publishFreshDirectory, inventory, pairedSourceHash, exactReleases, parseArgs } from './lib.mjs';
+import { SOURCE_HASH, RELEASE_ID, RELEASE_HASHES, BACK_DIRS, BACK_FILES, cleanPath, existingDirectory, noSymlinkPath, freshOutput, publishFreshDirectory, inventory, pairedSourceHash, exactReleases, parseArgs } from './lib.mjs';
 
 export async function assemble({ backSource, frontWeb, readyRoot, output, expectedSourceHash = SOURCE_HASH, expectedArchives = RELEASE_HASHES }) {
   if (Number(process.versions.node.split('.')[0]) !== 24) throw new Error('Node 24 is required');
@@ -10,11 +10,11 @@ export async function assemble({ backSource, frontWeb, readyRoot, output, expect
   const ready = await existingDirectory(cleanPath(readyRoot, 'ready root'));
   const target = cleanPath(output, 'output');
   await freshOutput(target, [back, web, ready]);
-  if (await pairedSourceHash(back, web) !== expectedSourceHash) throw new Error('Paired sourceHash mismatch; canonical source does not match the selected R2');
+  if (await pairedSourceHash(back, web) !== expectedSourceHash) throw new Error('Paired sourceHash mismatch; canonical source does not match the selected R3');
   // The verifier itself is covered by the accepted sourceHash before importing it.
   const { verifyRelease } = await import(pathToFileURL(path.join(back, 'ops/artifacts.mjs')).href);
   const before = await exactReleases(ready, verifyRelease, expectedArchives);
-  if (before['r2-001']?.sourceHash !== expectedSourceHash) throw new Error('R2 archive and paired sources have different sourceHash');
+  if (before[RELEASE_ID]?.sourceHash !== expectedSourceHash) throw new Error('R3 archive and paired sources have different sourceHash');
   for (const dir of BACK_DIRS) await inventory(path.join(back, dir));
   for (const file of BACK_FILES) await noSymlinkPath(path.join(back, file));
   await mkdir(path.dirname(target), { recursive: true });

@@ -1,0 +1,224 @@
+{
+  "producer": "/root/spec_verifier",
+  "recordedAt": "2026-10-07T06:07:50.618298+00:00",
+  "status": "PASS_LOCAL_SCOPED",
+  "decision": "Independent local functional acceptance of immutable r3-001; target deployment and human/hardware gates remain unverified.",
+  "artifact": {
+    "releaseId": "r3-001",
+    "manifestSha256": "defab06551d52e9cc71c0a6d56c769e9030e51649756cecfba659a70c5acfc63",
+    "sourceHash": "2233389d406901529b55b5cf7c9ecfef7b1c5726c12cbf0b0495bae7349bfadb",
+    "versions": {
+      "frontend": "r3-web-603aab8bfd082c86",
+      "backend": "r3-api-7b084f31d98e7e6f",
+      "core": "r3-core-1",
+      "content": "r3-content-1",
+      "metadataSchema": "r3-meta-1",
+      "saveFormat": 4,
+      "api": 1
+    },
+    "fileCount": 2294
+  },
+  "inputs": {
+    "docs/R3-CONTRACT.md": "0562c4fa5d278e797e163c8ac419b2bfb60efb907c2923c98182c5971690bb13",
+    "docs/Last-Throne-TZ-v0.5.md": "cec0b832448455558791db8a148e441f47c1719dcc80c3afc080e7e50557f8e0",
+    "docs/FEATURE_HANDOFF-1.md": "880ed9d2dc0004f39250f4a5c3739840cc1f9c4b37edf78b652dc787f5aa44e4"
+  },
+  "sourceIdentityReceipt": "identity-r3-001.json",
+  "identityReceiptSha256": "bf1d9cb8a357991a274002eebb592512359a2e26ed15a7ace34bdb5c4a3f5c01",
+  "testInventoryCount": 43,
+  "testInventorySha256": "79cb05b5d49bd3b77cdea124a855e8a605ac76400fe1a2331bc61f6fa5dacbc9",
+  "suite": {
+    "total": 213,
+    "passed": 212,
+    "failed": 0,
+    "skipped": 1,
+    "skip": "Environment forbids Unix socket binding; target-host test required.",
+    "independentCoreApiIncluded": 15,
+    "evidence": "npm-final.log",
+    "typecheck": "PASS"
+  },
+  "propertyReceipts": [
+    {
+      "scope": "Full inventory / every byte / safe paths / unchanged runtime and R0-R2 archives",
+      "status": "PASS",
+      "evidence": "identity-r3-001.json"
+    },
+    {
+      "scope": "Independent core actual15 and typed EAV/API negative cases; synthetic boundaries explicitly named",
+      "status": "PASS",
+      "checks": 15,
+      "evidence": "core-api-final.log"
+    },
+    {
+      "scope": "Native R1/R2 cloud continuation with exact retained clients",
+      "status": "PASS",
+      "checks": 4,
+      "evidence": "compat-browser-r3-001-1791350689324/report.json"
+    },
+    {
+      "scope": "Real archived API/gateway activation and matching-ETag content/client tamper negatives",
+      "status": "PASS",
+      "checks": 4,
+      "evidence": "activation/real-activation-latest.json"
+    },
+    {
+      "scope": "New R3 UI/graphics/audio/expedition/reward/offline A then C properties",
+      "status": "PASS_COMPLETED_PROPERTIES",
+      "checks": 16,
+      "wrapperStatus": "FAIL_OBSERVATION_TIMEOUT",
+      "evidence": "browser-r3-001-1791350708845/report.json",
+      "classificationEvidence": "timeout-differential-replay.json"
+    },
+    {
+      "scope": "Real two-tab conflict, controlled visibility, natural offline defeat/reload/reconnect/terminal closure",
+      "status": "PASS",
+      "checks": 5,
+      "evidence": "lifecycle-r3-001-1791351372664/report.json"
+    },
+    {
+      "scope": "Same natural UI run waves1-15, actual commanders/spells, cloud victory and terminal reload",
+      "status": "PASS",
+      "checks": 6,
+      "evidence": "party-r3-001-1791352505111/report.json",
+      "recoveredFrom": "party-r3-001-1791352319514/report.json"
+    }
+  ],
+  "actualUiParty": {
+    "runId": "2c86db71-3676-43a2-be1f-0df141b94a7e",
+    "seed": 1873322674,
+    "result": {
+      "gold": 8052,
+      "seed": 1873322674,
+      "wave": 15,
+      "outcome": "victory",
+      "simTick": 32008,
+      "throneHp": 131,
+      "versions": {
+        "core": "r3-core-1",
+        "content": "r3-content-1",
+        "metadataSchema": "r3-meta-1"
+      },
+      "statistics": {
+        "kills": 1064,
+        "builds": 22,
+        "upgrades": 45,
+        "goldEarned": 17232
+      },
+      "lastCompletedWave": 15
+    },
+    "cloudRevision": 37,
+    "boundaries": [
+      {
+        "wave": 1,
+        "simTick": 852,
+        "throneHp": 240,
+        "recoveredBoundary": false
+      },
+      {
+        "wave": 2,
+        "simTick": 1878,
+        "throneHp": 240,
+        "recoveredBoundary": false
+      },
+      {
+        "wave": 3,
+        "simTick": 3110,
+        "throneHp": 240,
+        "recoveredBoundary": true
+      },
+      {
+        "wave": 4,
+        "simTick": 4478,
+        "throneHp": 240,
+        "recoveredBoundary": false
+      },
+      {
+        "wave": 5,
+        "simTick": 6175,
+        "throneHp": 131,
+        "recoveredBoundary": false
+      },
+      {
+        "wave": 6,
+        "simTick": 7922,
+        "throneHp": 131,
+        "recoveredBoundary": false
+      },
+      {
+        "wave": 7,
+        "simTick": 9806,
+        "throneHp": 131,
+        "recoveredBoundary": false
+      },
+      {
+        "wave": 8,
+        "simTick": 12026,
+        "throneHp": 131,
+        "recoveredBoundary": false
+      },
+      {
+        "wave": 9,
+        "simTick": 14211,
+        "throneHp": 131,
+        "recoveredBoundary": false
+      },
+      {
+        "wave": 10,
+        "simTick": 16576,
+        "throneHp": 131,
+        "recoveredBoundary": false
+      },
+      {
+        "wave": 11,
+        "simTick": 19679,
+        "throneHp": 131,
+        "recoveredBoundary": false
+      },
+      {
+        "wave": 12,
+        "simTick": 22404,
+        "throneHp": 131,
+        "recoveredBoundary": false
+      },
+      {
+        "wave": 13,
+        "simTick": 25309,
+        "throneHp": 131,
+        "recoveredBoundary": false
+      },
+      {
+        "wave": 14,
+        "simTick": 28467,
+        "throneHp": 131,
+        "recoveredBoundary": false
+      },
+      {
+        "wave": 15,
+        "simTick": 32008,
+        "throneHp": 131,
+        "recoveredBoundary": false
+      }
+    ],
+    "zeroPageErrors": true
+  },
+  "environment": {
+    "browser": "153.0.8010.0",
+    "rendering": "Headless ANGLE/SwiftShader WebGL2 software GPU",
+    "virtualClock": "Continuous virtual RAF/performance rate8 while waiting and rate1 for real UI actions. No game mutation or injected state.",
+    "database": "Fresh serialized PGlite; resumed party retained its own private DB/profile.",
+    "node": "v24.19.0"
+  },
+  "openProductDefects": [],
+  "unverified": [
+    "Target VPS and first-game coexistence under load",
+    "Docker/Nginx/TLS and production Unix socket",
+    "Production PostgreSQL concurrent sessions, backup/restore and resource limits",
+    "Physical GPU/FPS, phones and other browsers",
+    "OS freeze rather than controlled visibility",
+    "Human A02/A21 readability and subjective difficulty/balance"
+  ],
+  "confidentiality": "No cookies/tokens/storageState in public evidence; private .preview recovery/storage files mode0600 excluded from delivery.",
+  "rawFailuresPreserved": true,
+  "noExternalDeployment": true,
+  "testOnlyPostExecutionChange": "Private recovery files now explicitly mode0600 for new and existing files; node --check PASS. No product or gameplay change; party not rerun."
+}
