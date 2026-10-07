@@ -1,7 +1,8 @@
 import { createHash,randomUUID } from 'node:crypto';
 import { BUILD_CONTEXT,createSnapshotV1,validateSnapshotV1,scoreSnapshot,type SnapshotV1,type BuildContext } from '../src/snapshot-v1.ts';
 import type { Database,Sql } from './database.ts';
-import { CONTENT_IDS,INTRO_CONTENT_IDS,contentIds,TYPES,writeValues,seedR1Metadata } from './r1-metadata.ts';
+import {checkpointEntities,checkpointDTO,type AggregateEntity} from './checkpoint-eav.ts';
+import { CONTENT_IDS,INTRO_CONTENT_IDS,R2_CONTENT_IDS,contentIds,materialId,materialCode,TYPES,writeValues,seedR1Metadata,verifyMetadata } from './r1-metadata.ts';
 export class DomainError extends Error {constructor(public code:string,message:string,public status=400,public path?:string,public details?:unknown){super(message)}}
 export interface ProfileDTO{profile_id:string;revision:number;display_name:string;sound_enabled:boolean;sound_volume:number;quality:'low'|'medium';controls_hint_seen:boolean}
 export interface RunDTO{run_id:string;revision:number;lifecycle:'active'|'won'|'lost'|'abandoned';checkpoint:SnapshotV1;updated_at:string;started_at:string;result?:ReturnType<typeof scoreSnapshot>}
@@ -15,12 +16,18 @@ const request=(r:Record<string,unknown>)=>{if(!uuid(r.request_id))throw new Doma
 const revision=(r:Record<string,unknown>)=>{if(typeof r.expected_revision!=='number'||!Number.isInteger(r.expected_revision)||r.expected_revision<0)throw new DomainError('VALIDATION_FAILED','Nonnegative revision required',400,'expected_revision');return r.expected_revision};
 const runId=(r:Record<string,unknown>)=>{if(!uuid(r.run_id))throw new DomainError('VALIDATION_FAILED','UUID required',400,'run_id');return r.run_id};
 interface Root{id:string;revision:number;created_at:string;updated_at:string;entity_type_id:string}
-interface AggregateEntity{type:string;values:Record<string,unknown>}
 export class R1Store {
  constructor(public db:Database){}
  /** Explicit local/dev initializer only; PostgreSQL startup never invokes it. */
  async seedForLocalTests(){await this.db.transaction('',tx=>seedR1Metadata(tx))}
- async check(){const r=await this.db.query('SELECT version FROM syezzhaem.schema_migrations WHERE version=1');if(!r.rows.length)throw new Error('R1 migration unavailable');const c=await this.db.query('SELECT id FROM syezzhaem.entities WHERE id=ANY($1::uuid[])',[[CONTENT_IDS.level,INTRO_CONTENT_IDS.level]]);if(c.rows.length!==2)throw new Error('R1 immutable content unavailable')}
+ async check(){
+  const r=await this.db.query('SELECT version FROM syezzhaem.schema_migrations WHERE version=1');
+  if(!r.rows.length)throw new Error('Game migration unavailable');
+  await verifyMetadata(this.db);
+  const required=[CONTENT_IDS.level,INTRO_CONTENT_IDS.level,...Object.values(R2_CONTENT_IDS)];
+  const c=await this.db.query('SELECT id FROM syezzhaem.entities WHERE id=ANY($1::uuid[])',[required]);
+  if(c.rows.length!==required.length)throw new Error('Immutable R1/R2 content unavailable');
+ }
  private owner(owner:string){if(typeof owner!=='string'||!owner.length||owner.length>128)throw new DomainError('NOT_FOUND','Authenticated user required',401)}
  private async profile(tx:Sql,owner:string,lock=true):Promise<{id:string;dto:ProfileDTO}>{
   if(lock)await tx.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))',[`syezzhaem-profile:${owner}`]);
@@ -43,7 +50,7 @@ export class R1Store {
  async bootstrap(owner:string,client_build:unknown=BUILD_CONTEXT.client_build_id,activeBuild:BuildContext=BUILD_CONTEXT){this.owner(owner);return this.db.transaction(owner,async tx=>{
   const p=await this.profile(tx,owner);const active=(await tx.query<{run_id:string}>('SELECT run_id FROM syezzhaem.active_run_index WHERE user_id=$1',[owner])).rows[0];
   const builds=await tx.query<{value_text:string}>("SELECT DISTINCT v.value_text FROM syezzhaem.entity_parameter_values v JOIN syezzhaem.entities e ON e.id=v.entity_id WHERE e.owner_user_id=$1 AND v.parameter_id='game_run.client_build_id'",[owner]);
-  return{user_id:owner,profile:p.dto,active_run:active?await this.readRun(tx,owner,active.run_id):null,catalog:[{level_id:activeBuild.level_id,title:'Дом — мост — портал',content_version:activeBuild.content_version,rules_version:activeBuild.rules_version,client_build_id:activeBuild.client_build_id}],compatible_versions:[...new Set([activeBuild.client_build_id,...builds.rows.map(b=>b.value_text)])],client_build};
+  return{user_id:owner,profile:p.dto,active_run:active?await this.readRun(tx,owner,active.run_id):null,catalog:[{level_id:activeBuild.level_id,title:activeBuild.content_version==='r2-map-1'?'СЪЕЗЖАЕМ! — полный маршрут':'Дом — мост — портал',content_version:activeBuild.content_version,rules_version:activeBuild.rules_version,client_build_id:activeBuild.client_build_id}],compatible_versions:[...new Set([activeBuild.client_build_id,...builds.rows.map(b=>b.value_text)])],client_build};
  })}
  async updateProfile(owner:string,input:unknown):Promise<ProfileDTO>{this.owner(owner);const body=exact(input,['expected_revision','request_id'],['settings']);const settings=exact(body.settings??{},[],['display_name','sound_enabled','sound_volume','quality','controls_hint_seen']);
   for(const[k,v]of Object.entries(settings)){if(k==='display_name'&&(typeof v!=='string'||v.length>64)||['sound_enabled','controls_hint_seen'].includes(k)&&typeof v!=='boolean'||k==='sound_volume'&&(typeof v!=='number'||!Number.isFinite(v)||v<0||v>1)||k==='quality'&&!['low','medium'].includes(v as string))throw new DomainError('VALIDATION_FAILED','Setting invalid',400,`settings.${k}`)}
@@ -98,26 +105,18 @@ export class R1Store {
  }
  private async root(tx:Sql,owner:string,id:string,lock:boolean):Promise<Root>{const root=(await tx.query<Root>(`SELECT * FROM syezzhaem.entities WHERE id=$1 AND owner_user_id=$2 AND entity_type_id='game_run' ${lock?'FOR UPDATE':''}`,[id,owner])).rows[0];if(!root)throw new DomainError('NOT_FOUND','Run unavailable',404);return root}
  private async writeCheckpoint(tx:Sql,owner:string,id:string,s:SnapshotV1){
-  const checkpoint=randomUUID();const children:{id:string;type:string;parent:string;values:Record<string,unknown>;keys?:[string,string][]}[]=[
-   {id:checkpoint,type:'checkpoint',parent:id,values:{run_ref:id,schema_version:s.schema_version,sim_tick:s.sim_tick,rng_state:s.rng_state,outcome:s.outcome,reason:s.reason,distance:s.counters.distance,placed_sequence:s.counters.placed_sequence}},
-   {id:randomUUID(),type:'actor_state',parent:checkpoint,values:{checkpoint_ref:checkpoint,actor_key:'player',actor_kind:'player',x:s.player.x,y:s.player.y,vx:s.player.vx,vy:s.player.vy,hp:s.player.hp,state:'active',support_space:s.player.support?.coordinate_space,support_x:s.player.support?.x,support_y:s.player.support?.y,support_block_id:s.player.support?.block_id},keys:[['actor','player']]},
-   {id:randomUUID(),type:'house_state',parent:checkpoint,values:{checkpoint_ref:checkpoint,...s.house,support_loss_ticks:s.content_version==='r1-map-2'?0:s.house.support_loss_ticks,support_loss_ticks_v2:s.content_version==='r1-map-2'?s.house.support_loss_ticks:undefined}},
-   {id:randomUUID(),type:'inventory_item',parent:checkpoint,values:{checkpoint_ref:checkpoint,material_ref:CONTENT_IDS.wood,quantity:s.inventory.wood},keys:[['material',CONTENT_IDS.wood]]},
-  ];
-  for(const space of['house','world']as const)for(const c of s[`${space}_cells`])children.push({id:randomUUID(),type:'cell_override',parent:checkpoint,values:{checkpoint_ref:checkpoint,coordinate_space:space,x:c.x,y:c.y,operation:c.operation,base_block_id:c.base_block_id,block_definition_ref:c.material?CONTENT_IDS.wood:undefined,block_id:c.block_id,original_block_id:c.original_block_id},keys:[['cell',`${space}:${c.x}:${c.y}`],...(c.block_id?[['block',c.block_id]as[string,string]]:[])]});
-  for(const e of children){await tx.query('INSERT INTO syezzhaem.entities(id,entity_type_id,owner_user_id,parent_id) VALUES($1,$2,$3,$4)',[e.id,e.type,owner,e.parent]);await writeValues(tx,e.id,e.type,e.values);for(const[kind,value]of e.keys??[])await tx.query('INSERT INTO syezzhaem.aggregate_keys(checkpoint_id,key_kind,key_value,entity_id,owner_user_id) VALUES($1,$2,$3,$4,$5)',[checkpoint,kind,value,e.id,owner]);}
+  const children=checkpointEntities(id,s);
+  // All referenced actor roots exist before values: held_actor_ref is checked immediately.
+  for(const e of children)await tx.query('INSERT INTO syezzhaem.entities(id,entity_type_id,owner_user_id,parent_id) VALUES($1,$2,$3,$4)',[e.id,e.type,owner,e.parent]);
+  for(const e of children){await writeValues(tx,e.id,e.type,e.values);for(const[kind,value]of e.keys??[])await tx.query('INSERT INTO syezzhaem.aggregate_keys(checkpoint_id,key_kind,key_value,entity_id,owner_user_id) VALUES($1,$2,$3,$4,$5)',[e.parent,kind,value,e.id,owner]);}
  }
  private async aggregate(tx:Sql,id:string,owner:string):Promise<Map<string,AggregateEntity>>{
   const rows=await tx.query<{id:string;entity_type_id:string;code:string;data_type:string;value_text:string|null;value_integer:string|number|null;value_number:number|null;value_boolean:boolean|null;value_timestamp:Date|string|null;value_reference:string|null}>(`WITH RECURSIVE tree AS(SELECT id,entity_type_id FROM syezzhaem.entities WHERE id=$1 AND owner_user_id=$2 UNION ALL SELECT e.id,e.entity_type_id FROM syezzhaem.entities e JOIN tree t ON e.parent_id=t.id WHERE e.owner_user_id=$2) SELECT t.id,t.entity_type_id,p.code,v.data_type,v.value_text,v.value_integer,v.value_number,v.value_boolean,v.value_timestamp,v.value_reference FROM tree t LEFT JOIN syezzhaem.entity_parameter_values v ON v.entity_id=t.id LEFT JOIN syezzhaem.entity_parameters p ON p.id=v.parameter_id ORDER BY t.id,p.code`,[id,owner]);
   const map=new Map<string,AggregateEntity>();for(const row of rows.rows){if(!map.has(row.id))map.set(row.id,{type:row.entity_type_id,values:{}});if(!row.code)continue;const value=row.data_type==='integer'?Number(row.value_integer):row.data_type==='number'?row.value_number:row.data_type==='boolean'?row.value_boolean:row.data_type==='timestamp'?time(row.value_timestamp):row.data_type==='reference'?row.value_reference:row.value_text;map.get(row.id)!.values[row.code]=value;}return map;
  }
  private async readRun(tx:Sql,owner:string,id:string):Promise<RunDTO>{
-  const root=await this.root(tx,owner,id,false),map=await this.aggregate(tx,id,owner),all=(type:string)=>[...map.values()].filter(e=>e.type===type).map(e=>e.values);
-  const run=map.get(id)!.values,c=all('checkpoint')[0],p=all('actor_state')[0],h=all('house_state')[0],inv=all('inventory_item')[0];if(!c||!p||!h||!inv)throw new Error('Incomplete EAV run aggregate');
-  const cells=(space:string)=>all('cell_override').filter(v=>v.coordinate_space===space).map(v=>({x:v.x,y:v.y,operation:v.operation,base_block_id:v.base_block_id??null,block_id:v.block_id??null,original_block_id:v.original_block_id??null,material:v.block_definition_ref?'wood':null}));
-  const snapshot=validateSnapshotV1({schema_version:c.schema_version,run_id:id,client_build_id:run.client_build_id,content_version:run.content_version,rules_version:run.rules_version,level_id:run.level_ref===INTRO_CONTENT_IDS.level?'house-bridge-portal-intro':'house-bridge-portal',sim_tick:c.sim_tick,rng_state:c.rng_state,outcome:c.outcome,reason:c.reason??null,
-   player:{x:p.x,y:p.y,vx:p.vx,vy:p.vy,hp:p.hp,support:p.support_space===undefined?null:{coordinate_space:p.support_space,x:p.support_x,y:p.support_y,block_id:p.support_block_id},held_actor_key:null,timers:{}},
-   house:{x:h.x,y:h.y,core_hp:h.core_hp,movement_state:h.movement_state,support_loss_ticks:run.content_version==='r1-map-2'?h.support_loss_ticks_v2:h.support_loss_ticks},house_cells:cells('house'),world_cells:cells('world'),inventory:{wood:inv.quantity},actors:[],lava:null,counters:{distance:c.distance,placed_sequence:c.placed_sequence}});
+  const root=await this.root(tx,owner,id,false),map=await this.aggregate(tx,id,owner);
+  const run=map.get(id)!.values,snapshot=validateSnapshotV1(checkpointDTO(id,map));
   const dto:RunDTO={run_id:id,revision:root.revision,lifecycle:run.lifecycle as RunDTO['lifecycle'],checkpoint:snapshot,updated_at:time(root.updated_at),started_at:time(run.started_at)};if(dto.lifecycle==='won'||dto.lifecycle==='lost')dto.result=scoreSnapshot(snapshot);return dto;
  }
  async history(owner:string,input:unknown={}){this.owner(owner);const body=exact(input,[],['cursor','page_size']);const size=body.page_size??10;if(typeof size!=='number'||!Number.isInteger(size)||size<1||size>30)throw new DomainError('VALIDATION_FAILED','Page size 1..30 required',400,'page_size');let cursor:{created_at:string;id:string}|null=null;

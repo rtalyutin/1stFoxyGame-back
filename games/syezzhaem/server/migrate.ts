@@ -12,5 +12,5 @@ try{
  for(const {nspname}of namespaces.rows){const known=await client.query('SELECT to_regclass($1) AS marker',[`${nspname}.schema_migrations`]);if(!known.rows[0]?.marker)throw new Error(`Refusing existing unrecognized namespace: ${nspname}`)}
  for(const name of ['000-roles.sql','001-r1.sql','002-auth.sql'])await client.query(await readFile(new URL(`../db/${name}`,import.meta.url),'utf8'));
  await seedR1Metadata({async exec(sql){await client.query(sql)},async query<T>(sql:string,params:unknown[]=[]){return{rows:(await client.query(sql,params)).rows as T[]}}});
- await client.query('COMMIT');console.log('R1 additive game/Auth migrations and immutable content verified');
+ await client.query('COMMIT');console.log('R1/R2 additive game/Auth metadata and immutable content verified');
 }catch(error){await client.query('ROLLBACK');throw error}finally{client.release();await pool.end()}

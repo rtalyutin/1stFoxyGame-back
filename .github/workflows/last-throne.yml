@@ -43,7 +43,7 @@ jobs:
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
           repository: rtalyutin/1stFoxyGame-front
-          ref: 473a74b024f537c84b3a7a9607f4afea8189c895
+          ref: babf28bdc01e559ac16bab117c15805e1aad37ff
           path: front
           persist-credentials: false
       - name: Set up exact Node24

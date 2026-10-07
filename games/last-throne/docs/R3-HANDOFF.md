@@ -1,0 +1,17 @@
+# R3 — принятая локальная поставка
+
+feature_id=last-throne-r3; contract_revision=r3/1; stage=VERIFIED_LOCAL; producer=/root; consumer=user; artifact_revision=r3-001; evidence_status=VERIFIED; gate_verdict=PASS_LOCAL_SCOPED; action_decision=CONTINUE к завершению интеграционного CI и передаче файлов; hypothesis_assessment=NOT_ASSESSED для реакции пользователя/баланса. VPS operation_status=NOT_STARTED.
+
+Принят контракт docs/R3-CONTRACT.md SHA2560562c4fa5d278e797e163c8ac419b2bfb60efb907c2923c98182c5971690bb13. FEATURE_HANDOFF/1 digest880ed9d2dc0004f39250f4a5c3739840cc1f9c4b37edf78b652dc787f5aa44e4 подтверждён авторами и потребителями компонентов. Итоговое ТЗ v0.6 продолжает прежнюю identity с историей v0.5.
+
+Объект r3-001: sourceHash2233389d406901529b55b5cf7c9ecfef7b1c5726c12cbf0b0495bae7349bfadb; manifestHashdefab06551d52e9cc71c0a6d56c769e9030e51649756cecfba659a70c5acfc63;2294файла. Pins r3-web-603aab8bfd082c86/r3-api-7b084f31d98e7e6f/r3-core-1/r3-content-1/r3-meta-1/save4/API1. Exact R0/R1/R2 и старые SQL/core/content сохранены; независимый identity-r3-001.json сверяет каждый байт.
+
+Авторские передачи core10PASS, database18PASS, delivery38PASS/1socketSKIP, frontend targeted7PASS и renderer/audio17PASS приняты. Их доказательства не заменяют независимую приёмку. Проверяющий /root/spec_verifier отдельно выполнил213Nodeслучаев/212PASS/0FAIL/1environmentSKIP, strict TypeScript,15core/API,4archive-cloud,4activation,5lifecycle и полную natural UI-партию15волн. Наборы пересекаются, числа не суммируются.
+
+Независимый acceptance-report.json решает PASS_LOCAL_SCOPED: run2c86db71-3676-43a2-be1f-0df141b94a7e/seed1873322674, victorytick32008/throne131/1064kills/cloudrevision37. Штатный Continue того же сохранения после observer failure связан с предыдущим raw receipt; все15границ сохранены, browsererrors0. Terminalreload не предлагает Continue. Raw FAIL остаются в evidence с диагностикой; продуктовые исправления mapper/startcheckpoint/metadata publication guard сделаны до freeze. Открытых подтверждённых продуктовых дефектов в проверенной области нет.
+
+Документы [QA-R3.md](QA-R3.md) и [TEST-REPORT-R3.md](TEST-REPORT-R3.md) отделяют реальные действия от synthetic fixtures, virtual8x wait от физической производительности, PGlite от фактического PG17CI. Локальные actual-stage wrappers13/13PASS. GitHub исходный pairCI43core/HTTP/embedded и11storage PASS на PostgreSQL17.11, первая игра/хаб CI также success. Актуальные параллельные изменения Syezzhaem R2 включаются без изменения их blob SHA. Final Git heads/merge readback фиксируются в отдельном Last-Throne-R3-handoff.md готовой поставки.
+
+Следующее внешнее действие — доступ к VPS первой игры, фактический baseline/backup/readback и выбор first-install/upgrade-r0-r1/upgrade-r2. Обычный R2→R3 использует прежний runtime-контейнер и Nginx, аддитивные migration/grants и A/B switch. Frontend rollback сохраняет R3 API/save4; pair rollback кR2 запрещён. Future content-only ID должен быть объявлен заранее. UNKNOWN требует readback перед повтором. Подробности ops/RUNBOOK-R3.md и backend deploy/last-throne/README.md.
+
+Не приняты автоматически серверное сосуществование/ёмкость/backup recovery/TLS/Docker identity, physical GPU/FPS, телефоны, OS freeze, human A02/A21 и субъективный баланс. Публичная ссылка и активная карточка хаба появятся после установки и HTTPS gate. Художественное намерение r3-art-1 сохраняет ясные круглые позиции героев, квадратные фундаменты и магические эффекты вылазок/предметов/Aegis; человеческая оценка остаётся следующим отдельным плейтестом.

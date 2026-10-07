@@ -6,7 +6,7 @@ import{startPostgresFixture}from'./data-pg-helper.mjs';
 import{createDatabase,type Database,type Sql}from'../server/database.ts';
 import{R1Store,type RunDTO}from'../server/r1-store.ts';
 import{seedR1Metadata}from'../server/r1-metadata.ts';
-import{BUILD_CONTEXT,CURRENT_BUILD_CONTEXT,toSnapshotV1,fromSnapshotV1,scoreSnapshot}from'../src/snapshot-v1.ts';
+import{BUILD_CONTEXT,INTRO_BUILD_CONTEXT,toSnapshotV1,fromSnapshotV1,scoreSnapshot}from'../src/snapshot-v1.ts';
 import{step,take,place,targetAt}from'../src/core.ts';
 import{exportGame,restoreGame,rebuildProjections}from'../server/r1-recovery.ts';
 let fixture:any,db:Database,store:R1Store;
@@ -45,7 +45,7 @@ test('intro seed adds a versioned timer parameter idempotently without rewriting
  assert.equal(Number((await fixture.admin.query("SELECT max_number FROM syezzhaem.entity_parameters WHERE id='house_state.support_loss_ticks_v2'")).rows[0].max_number),240);
  const valuesAfter=(await fixture.admin.query("SELECT v.* FROM syezzhaem.entity_parameter_values v JOIN syezzhaem.entities e ON e.id=v.entity_id WHERE e.owner_user_id IS NULL AND e.id::text NOT IN ('c4b902a6-1532-4212-8b21-000000000011','c4b902a6-1532-4212-8b21-000000000012','c4b902a6-1532-4212-8b21-000000000015','c4b902a6-1532-4212-8b21-000000000016') ORDER BY v.entity_id,v.parameter_id")).rows;
  assert.deepEqual(valuesAfter,valuesBefore);assert.deepEqual(await store.get('intro-old',old.run_id),old);
- const intro=CURRENT_BUILD_CONTEXT;
+ const intro=INTRO_BUILD_CONTEXT;
  const run=await store.start('intro-new',{client_build_id:intro.client_build_id,content_version:intro.content_version,level_id:intro.level_id,request_id:randomUUID()},intro);
  assert.equal(run.checkpoint.house.support_loss_ticks,240);assert.equal(run.checkpoint.level_id,intro.level_id);
  assert.deepEqual(run.checkpoint.house_cells,[]);

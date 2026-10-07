@@ -19,7 +19,8 @@ const baseKeys=['api_version','build_id','content_version','entry_url','level_id
 function keys(value:object,expected:string[]){if(Object.keys(value).sort().join()!==[...expected].sort().join())throw new Error('Invalid release manifest keys');}
 function safePath(name:string){if(!pathPattern.test(name)||name.startsWith('/')||name.split('/').some(x=>x===''||x==='.'||x==='..'))throw new Error('Unsafe release path');}
 function validateDescriptor(d:ReleaseDescriptor){
-  if(!buildPattern.test(d.build_id)||d.manifest_version!==1||d.api_version!=='v1'||d.snapshot_schema_version!==1||d.entry_url!==`/games/syezzhaem/releases/${d.build_id}/`||!compatibleContent(d.content_version,d.rules_version)||d.level_id!==(d.content_version==='r1-map-2'?'house-bridge-portal-intro':'house-bridge-portal')||!/^[0-9a-f]{64}$/.test(d.manifest_sha256))throw new Error('Unsupported release descriptor');
+  const level=d.content_version==='r2-map-1'?'house-full-route':d.content_version==='r1-map-2'?'house-bridge-portal-intro':'house-bridge-portal';
+  if(!buildPattern.test(d.build_id)||d.manifest_version!==1||d.api_version!=='v1'||d.snapshot_schema_version!==1||d.entry_url!==`/games/syezzhaem/releases/${d.build_id}/`||!compatibleContent(d.content_version,d.rules_version)||d.level_id!==level||!/^[0-9a-f]{64}$/.test(d.manifest_sha256))throw new Error('Unsupported release descriptor');
 }
 export class ReleaseRegistry {
   constructor(readonly root?:string){}

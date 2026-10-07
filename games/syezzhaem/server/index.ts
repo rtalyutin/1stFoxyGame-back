@@ -23,7 +23,7 @@ try {
   if(readiness.statusCode!==200)throw new Error('Initial API readiness failed; published content, Auth and game migration must be compatible');
   await app.listen({port,host});
 } catch(error) {if(app)await app.close();await auth.close();throw error;}
-console.log(`СЪЕЗЖАЕМ R1 API: ${host}:${port}`);
+console.log(`СЪЕЗЖАЕМ R2 API: ${host}:${port}`);
 let stopping=false;
 for (const signal of ['SIGINT','SIGTERM'] as const) process.once(signal,()=> {
   if(stopping)return;stopping=true;

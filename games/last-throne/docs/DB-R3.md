@@ -56,3 +56,9 @@ TD_TEST_DATABASE_URL='<URL свежего выделенного PostgreSQL17 td
 Перед любым DDL адаптер требует current_database()=td_db и отсутствие last_throne.entities. Он отказывается от существующей базы, не очищает её и не обращается к первой игре. URL не выводится. CI-сервис одноразовый; local real PG run не выполнен. Эта подготовка не означает выполненную проверку VPS, multi-session races, backup/restore или deployment.
 
 Передача `FEATURE_HANDOFF/1`, digest текущего docs/FEATURE_HANDOFF-1.md `880ed9d2dc0004f39250f4a5c3739840cc1f9c4b37edf78b652dc787f5aa44e4`: feature_id=last-throne-r3, contract_revision=r3/1, producer=/root/database, consumer=/root, artifact_revision=hashes выше; author gate PASS, evidence_status=EXECUTED, action_decision=CONTINUE, hypothesis_assessment=NOT_ASSESSED, external operation NOT_STARTED. Next: freeze/immutable bundle, independent QA и отдельный CI PostgreSQL17. Координатор владеет единственным TASK_STATE.
+
+## Дополнительная CI-проверка координатора
+
+GitHub Actions run37576984668/job112647973531, 07.10.2026: реальный PostgreSQL17.11, одноразовый выделенный td_db, node-postgres max4. Те же11storage assertions выполнены:11PASS/0FAIL/0SKIP, включая leased-session competing writes, atomic replay, EAV reference/value guards, future metadata handler rejection и actual role grants. Pair sourceHash2233389d406901529b55b5cf7c9ecfef7b1c5726c12cbf0b0495bae7349bfadb проверен перед запуском; frontend473a74b024f537c84b3a7a9607f4afea8189c895.
+
+Это отдельная исполненная CI-проверка после авторского PGlite gate. Она подтверждает SQL и проверенные конкурентные операции PostgreSQL17; производственная нагрузка, целевой VPS, первая игра до/после и backup/restore остаются неисполненными.

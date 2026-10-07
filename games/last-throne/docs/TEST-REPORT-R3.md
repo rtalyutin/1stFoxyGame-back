@@ -1,6 +1,6 @@
 # R3 — проверка текущей поставки
 
-07.10.2026. Контракт r3/1, handoff FEATURE_HANDOFF/1, digest 880ed9d2dc0004f39250f4a5c3739840cc1f9c4b37edf78b652dc787f5aa44e4. Координатор /root; независимый проверяющий /root/spec_verifier. Финальная immutable сборка и независимый браузерный gate ещё ожидаются; ниже отражены исполненные проверки, без объявления VPS или полной приёмки.
+07.10.2026. Контракт r3/1, handoff FEATURE_HANDOFF/1, digest 880ed9d2dc0004f39250f4a5c3739840cc1f9c4b37edf78b652dc787f5aa44e4. Координатор /root; независимый проверяющий /root/spec_verifier. Локальный функциональный gate exact r3-001 PASS, включая полную браузерную партию. Source2233389d406901529b55b5cf7c9ecfef7b1c5726c12cbf0b0495bae7349bfadb; manifestdefab06551d52e9cc71c0a6d56c769e9030e51649756cecfba659a70c5acfc63. VPS и человеческая приёмка не объявлены выполненными.
 
 | Проверка | Фактический результат и граница |
 | --- | --- |
@@ -14,6 +14,9 @@
 | Renderer/audio | 17 PASS, 0 browser errors. evidence/renderer-r3/HANDOFF.json и immutable report; отдельные реальные core episodes, не полная UI-партия |
 | Main UI | Автор preview001 прошёл 14 проверок новых механик, затем нашёл actual cloud legacy resume error. Preview002 preparation_race: 2 PASS; архивные переходы5PASS; независимый exact R3 API/R1/R2 cloud resume4PASS |
 | Hub activation fixtures | 13 PASS fixtures; независимый immutable R3 app/gateway4PASS: evidence/qa-r3/activation/real-activation-latest.json, safe corrupt projection/client rejection |
+| Полная UI-партия exact R3 | 15 волн, victory, throne131HP,1064kills, tick32008, cloudrevision37;6финальных PASS после штатного Continue того же естественного run, вместе с предшествующими границами1–3. evidence/qa-r3/party-r3-001-1791352505111/report.json |
+| Lifecycle | 5 PASS: two-tab conflict, bounded visibility return, естественный offline-defeat, reload terminal и последующая sync/checkpoint/finish; evidence/qa-r3/lifecycle-final.log |
+| Actual assembled wrappers | 13 PASS,0FAIL,0SKIP; evidence/wrappers-r3-final.log |
 
 Пересекающиеся авторские/независимые наборы не складываются с полным Node suite в новый total. Их receipts подтверждают различные границы.
 
@@ -27,9 +30,12 @@
 
 - Root запустил wrapper real-stage check до завершения atomic assembly: получен SETUP_FAIL ENOENT, продукт не исполнялся. Исходный wrappers-r3-setup-failure.log сохранён; после завершения сборки проверка повторена в правильном порядке:13/13PASS на настоящем собранном staging.
 
+- Full UI waiting limit180s на8-йволне не подтвердил softlock: read-only exact checkpoint replay воспроизвёл tick15651/enemy72HP/Pudge19HP, после чего wave закончилась через273такта; public Sniper cast — через24. evidence/qa-r3/timeout-differential-replay.json. Новый natural UI-controller использует способности; raw timeout сохранён.
+- Следующий UI-controller получил actionability timeout на обновляющейся DOM-цели и естественное завершение3-йволны между выбором и кастом. Исправлен harness: native clock на момент действий, actual focus+Enter по конкретному enemyID и короткий retry при исчезновении цели. Product source неизменен. Тот же run2c86db71-3676-43a2-be1f-0df141b94a7e штатно продолжен с4-йволны, завершил15волн и сохранил victoryrevision37; terminalreload не предлагает Continue. Предшествующий FAIL receipt party-r3-001-1791352319514 связан с финальным PASS через recoveredFrom и одинаковый runId.
+
 ## Среда и практические пределы
 
-Node24.19.0, npm11.9, TypeScript7.0.2, Babylon9.29/WebGL2, Chromium153/Linux/Playwright/SwiftShader. PGlite0.5.8 использует один leased backend; это не реальная многосессионная PostgreSQL17. CI с отдельным PG17 подготовлен, пока не объявлен исполненным.
+Node24.19.0, npm11.9, TypeScript7.0.2, Babylon9.29/WebGL2, Chromium153/Linux/Playwright/SwiftShader. PGlite0.5.8 использует один leased backend; это не реальная многосессионная PostgreSQL17. Реальная CI PG17.11 выполнена:11/11storage PASS,43/43core/HTTP/embedded PASS; evidence/github-ci-r3-source.json. Source2233389d…fadb и exact frontend473a74b…9895 проверены. CI wrappers12PASS/1SKIP из-за намеренного отсутствия readyarchives в Git; локальный actual-stage13/13PASS. Проверки первой игры/хаба в обоих репозиториях также прошли, без их изменений.
 
 Авторские UI-проверки используют обычные часы; независимая полная партия допускает явно записанный virtual RAF/performance clock8x только для ожидания. Fixtures не изменяют игровое состояние или diagnostics. Это не аппаратное измерение FPS.
 

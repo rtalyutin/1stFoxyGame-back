@@ -1,6 +1,8 @@
 import { createHash } from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import { RULES, TUTORIAL_RULES } from '../src/contracts.ts';
+import r2Rules from '../public/content/r2-rules-1.json' with {type:'json'};
+import r2Materials from '../public/content/r2-materials-1.json' with {type:'json'};
 import type { Sql } from './database.ts';
 export interface Parameter { code:string;type:'text'|'integer'|'number'|'boolean'|'timestamp'|'reference';optional?:boolean;ref?:string;min?:number;max?:number;length?:number }
 const t=(code:string,optional=false,length=256):Parameter=>({code,type:'text',optional,length});
@@ -12,22 +14,34 @@ const dt=(code:string,optional=false):Parameter=>({code,type:'timestamp',optiona
 export const TYPES:Record<string,{global?:boolean;parent?:string;params:Parameter[]}>= {
  player_profile:{params:[t('display_name',false,64),b('sound_enabled'),n('sound_volume',0,1),t('quality'),b('controls_hint_seen')]},
  game_run:{params:[r('level_ref','level_definition'),t('client_build_id'),t('content_version'),t('rules_version'),t('lifecycle'),dt('started_at'),dt('finished_at',true),i('active_tick'),i('result_score'),t('outcome_reason',true,300)]},
- checkpoint:{parent:'game_run',params:[r('run_ref','game_run'),i('schema_version',1,1),i('sim_tick'),i('rng_state',1,1),t('outcome'),t('reason',true,300),n('distance',0,1000),i('placed_sequence',1)]},
- actor_state:{parent:'checkpoint',params:[r('checkpoint_ref','checkpoint'),t('actor_key'),t('actor_kind'),n('x'),n('y'),n('vx',-100,100),n('vy',-100,100),n('hp',0,100),t('state'),t('support_space',true),i('support_x',-10000,10000,true),i('support_y',-10000,10000,true),t('support_block_id',true),r('held_actor_ref','actor_state',true)]},
+ checkpoint:{parent:'game_run',params:[r('run_ref','game_run'),i('schema_version',1,1),i('sim_tick'),i('rng_state',1,1),t('outcome'),t('reason',true,300),n('distance',0,1000),i('placed_sequence',1),i('tutorial_placements',0,2,true),i('destroyed_wood',0,1000,true),i('destroyed_stone',0,1000,true),i('destroyed_slime',0,1000,true),n('lava_x',-10000,10000,true),i('player_damage_ticks',0,60,true),i('core_damage_ticks',0,60,true)]},
+ actor_state:{parent:'checkpoint',params:[r('checkpoint_ref','checkpoint'),t('actor_key'),t('actor_kind'),n('x'),n('y'),n('vx',-100,100),n('vy',-100,100),n('hp',0,100),t('state'),t('support_space',true),i('support_x',-10000,10000,true),i('support_y',-10000,10000,true),t('support_block_id',true),r('held_actor_ref','actor_state',true),i('action_cooldown_ticks',0,60,true),i('direction',-1,1,true),i('fuse_ticks',0,84,true),{code:'explosion_applied',type:'boolean',optional:true}]},
  house_state:{parent:'checkpoint',params:[r('checkpoint_ref','checkpoint'),n('x'),n('y'),n('core_hp',0,100),t('movement_state'),i('support_loss_ticks',0,90),i('support_loss_ticks_v2',0,240,true)]},
- cell_override:{parent:'checkpoint',params:[r('checkpoint_ref','checkpoint'),t('coordinate_space'),i('x',-10000,10000),i('y',-10000,10000),t('operation'),t('base_block_id',true),r('block_definition_ref','block_definition',true),t('block_id',true),t('original_block_id',true)]},
+ cell_override:{parent:'checkpoint',params:[r('checkpoint_ref','checkpoint'),t('coordinate_space'),i('x',-10000,10000),i('y',-10000,10000),t('operation'),t('base_block_id',true),r('block_definition_ref','block_definition',true),t('block_id',true),t('original_block_id',true),i('durability',0,2,true),i('burn_ticks',0,180,true)]},
  inventory_item:{parent:'checkpoint',params:[r('checkpoint_ref','checkpoint'),r('material_ref','block_definition'),i('quantity',0,12)]},
  asset_definition:{global:true,params:[t('code'),t('kind'),t('relative_path'),t('sha256',false,64),t('source'),t('license'),t('attribution'),t('version')]},
  block_definition:{global:true,params:[t('code'),r('texture_asset_ref','asset_definition'),i('durability',1,1000),b('combustible'),i('burn_duration',0,100000),n('bounce_speed',0,100),b('transferable')]},
- ruleset:{global:true,params:[t('code'),t('version'),i('tick_rate',60,60),n('house_speed',0,10),n('move_speed',0,20),n('jump_speed',0,50),n('gravity',0,100),i('support_grace_ticks',0,600),i('victory_base',0),i('retained_bonus',0),i('time_bonus',0)]},
- level_definition:{global:true,params:[t('code'),t('title'),t('content_version'),r('map_asset_ref','asset_definition'),r('house_blueprint_ref','asset_definition'),r('ruleset_ref','ruleset'),t('publication_state')]},
+ ruleset:{global:true,params:[t('code'),t('version'),i('tick_rate',60,60),n('house_speed',0,10),n('move_speed',0,20),n('jump_speed',0,50),n('gravity',0,100),i('support_grace_ticks',0,600),i('victory_base',0),i('retained_bonus',0),i('time_bonus',0),r('configuration_asset_ref','asset_definition',true)]},
+ level_definition:{global:true,params:[t('code'),t('title'),t('content_version'),r('map_asset_ref','asset_definition'),r('house_blueprint_ref','asset_definition'),r('ruleset_ref','ruleset'),t('publication_state'),r('actors_asset_ref','asset_definition',true),r('materials_asset_ref','asset_definition',true),r('level_asset_ref','asset_definition',true)]},
 };
 export const CONTENT_IDS={map:'c4b902a6-1532-4212-8b21-000000000001',blueprint:'c4b902a6-1532-4212-8b21-000000000002',texture:'c4b902a6-1532-4212-8b21-000000000003',wood:'c4b902a6-1532-4212-8b21-000000000004',rules:'c4b902a6-1532-4212-8b21-000000000005',level:'c4b902a6-1532-4212-8b21-000000000006'};
 export const INTRO_CONTENT_IDS={...CONTENT_IDS,map:'c4b902a6-1532-4212-8b21-000000000011',blueprint:'c4b902a6-1532-4212-8b21-000000000012',rules:'c4b902a6-1532-4212-8b21-000000000015',level:'c4b902a6-1532-4212-8b21-000000000016'};
+/** New immutable material/level definitions; populated R1 definitions stay byte-for-byte equivalent. */
+export const R2_CONTENT_IDS={map:'c4b902a6-1532-4212-8b21-000000000021',blueprint:'c4b902a6-1532-4212-8b21-000000000022',texture:'c4b902a6-1532-4212-8b21-000000000023',wood:'c4b902a6-1532-4212-8b21-000000000024',rules:'c4b902a6-1532-4212-8b21-000000000025',level:'c4b902a6-1532-4212-8b21-000000000026',stoneTexture:'c4b902a6-1532-4212-8b21-000000000027',stone:'c4b902a6-1532-4212-8b21-000000000028',slimeTexture:'c4b902a6-1532-4212-8b21-000000000029',slime:'c4b902a6-1532-4212-8b21-000000000030',actors:'c4b902a6-1532-4212-8b21-000000000031',materials:'c4b902a6-1532-4212-8b21-000000000032',levelAsset:'c4b902a6-1532-4212-8b21-000000000033',rulesAsset:'c4b902a6-1532-4212-8b21-000000000034'};
 export function contentIds(version:string){
  if(version==='r1-map-1')return CONTENT_IDS;
  if(version==='r1-map-2')return INTRO_CONTENT_IDS;
+ if(version==='r2-map-1')return R2_CONTENT_IDS;
  throw new Error('Unsupported content version');
+}
+export function materialId(version:string,material:string):string {
+ if(version==='r2-map-1'&&['wood','stone','slime'].includes(material))return R2_CONTENT_IDS[material as 'wood'|'stone'|'slime'];
+ if(material==='wood')return CONTENT_IDS.wood;
+ throw new Error('Unsupported material/content pair');
+}
+export function materialCode(version:string,id:unknown):'wood'|'stone'|'slime' {
+ for(const material of ['wood','stone','slime'] as const){try{if(materialId(version,material)===id)return material}catch{}}
+ throw new Error('Unknown immutable material reference');
 }
 
 const columns={text:'value_text',integer:'value_integer',number:'value_number',boolean:'value_boolean',timestamp:'value_timestamp',reference:'value_reference'};
@@ -45,11 +59,7 @@ export async function seedR1Metadata(tx:Sql):Promise<void>{
   if(spec.parent)await tx.query('UPDATE syezzhaem.entity_types SET parent_type_id=$2 WHERE id=$1 AND parent_type_id IS NULL',[type,spec.parent]);
   for(const p of spec.params)await tx.query(`INSERT INTO syezzhaem.entity_parameters(id,entity_type_id,code,label,data_type,required,reference_type_id,min_number,max_number,max_length) VALUES($1,$2,$3,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT DO NOTHING`,[`${type}.${p.code}`,type,p.code,p.type,!p.optional,p.ref??null,p.min??null,p.max??null,p.length??256]);
  }
- for(const[type,spec]of Object.entries(TYPES)){
-  const row=(await tx.query<{global_type:boolean;parent_type_id:string|null}>('SELECT global_type,parent_type_id FROM syezzhaem.entity_types WHERE id=$1',[type])).rows[0];
-  if(!row||row.global_type!==!!spec.global||row.parent_type_id!==(spec.parent??null))throw new Error(`Type metadata mismatch: ${type}`);
-  for(const p of spec.params){const actual=(await tx.query<Record<string,unknown>>('SELECT data_type,required,multiple,reference_type_id,min_number,max_number,max_length FROM syezzhaem.entity_parameters WHERE id=$1',[`${type}.${p.code}`])).rows[0];const expected={data_type:p.type,required:!p.optional,multiple:false,reference_type_id:p.ref??null,min_number:p.min??null,max_number:p.max??null,max_length:p.length??256};if(!actual||Object.entries(expected).some(([k,v])=>actual[k]!==v))throw new Error(`Parameter metadata mismatch: ${type}.${p.code}`)}
- }
+ await verifyMetadata(tx);
  const assetHash=async(name:string)=>createHash('sha256').update(await readFile(new URL(`../public/content/${name}.json`,import.meta.url))).digest('hex');
  const global:{id:string;type:string;values:Record<string,unknown>}[]=[
   {id:CONTENT_IDS.map,type:'asset_definition',values:{code:'r1-map-1',kind:'procedural-map',relative_path:'content/r1-map-1.json',sha256:await assetHash('r1-map-1'),source:'FoxyGames',license:'project-original',attribution:'FoxyGames',version:'r1-map-1'}},
@@ -66,5 +76,28 @@ export async function seedR1Metadata(tx:Sql):Promise<void>{
   {id:intro.rules,type:'ruleset',values:{code:'r1-rules-2',version:'r1-rules-2',tick_rate:rules.tickRate,house_speed:rules.houseSpeed,move_speed:rules.moveSpeed,jump_speed:rules.jumpSpeed,gravity:rules.gravity,support_grace_ticks:Math.round(rules.supportGrace*rules.tickRate),victory_base:1000,retained_bonus:400,time_bonus:300}},
   {id:intro.level,type:'level_definition',values:{code:'house-bridge-portal-intro',title:'Первый мост',content_version:'r1-map-2',map_asset_ref:intro.map,house_blueprint_ref:intro.blueprint,ruleset_ref:intro.rules,publication_state:'published'}}
  );
+ const route=R2_CONTENT_IDS;
+ for(const [id,name,kind] of [
+  [route.map,'r2-map-1','procedural-map'],[route.blueprint,'r2-house-1','procedural-blueprint'],
+  [route.texture,'r2-materials-1','procedural-material'],[route.stoneTexture,'r2-materials-1','procedural-material'],[route.slimeTexture,'r2-materials-1','procedural-material'],
+  [route.actors,'r2-actors-1','actor-definitions'],[route.materials,'r2-materials-1','material-definitions'],[route.levelAsset,'r2-level-1','level-definitions'],[route.rulesAsset,'r2-rules-1','rule-definitions'],
+ ])global.push({id,type:'asset_definition',values:{code:id===route.texture?'r2-wood-1':id===route.stoneTexture?'r2-stone-1':id===route.slimeTexture?'r2-slime-1':name,kind,relative_path:`content/${name}.json`,sha256:await assetHash(name),source:'FoxyGames',license:'project-original',attribution:'FoxyGames',version:'r2-map-1'}});
+ for(const m of r2Materials.materials){
+  const material=m.key as 'wood'|'stone'|'slime';
+  global.push({id:materialId('r2-map-1',material),type:'block_definition',values:{code:material,texture_asset_ref:material==='stone'?route.stoneTexture:material==='slime'?route.slimeTexture:route.texture,durability:m.durability,combustible:m.burn_ticks>0,burn_duration:m.burn_ticks,bounce_speed:m.slime_bounce_speed,transferable:true}});
+ }
+ global.push(
+  {id:route.rules,type:'ruleset',values:{code:'r2-rules-1',version:'r2-rules-1',tick_rate:r2Rules.tickRate,house_speed:r2Rules.houseSpeed,move_speed:r2Rules.moveSpeed,jump_speed:r2Rules.jumpSpeed,gravity:r2Rules.gravity,support_grace_ticks:Math.round(r2Rules.supportGrace*r2Rules.tickRate),victory_base:1000,retained_bonus:400,time_bonus:300,configuration_asset_ref:route.rulesAsset}},
+  {id:route.level,type:'level_definition',values:{code:'house-full-route',title:'СЪЕЗЖАЕМ! — полный маршрут',content_version:'r2-map-1',map_asset_ref:route.map,house_blueprint_ref:route.blueprint,ruleset_ref:route.rules,publication_state:'published',actors_asset_ref:route.actors,materials_asset_ref:route.materials,level_asset_ref:route.levelAsset}},
+ );
  for(const e of global){const existing=await tx.query('SELECT id FROM syezzhaem.entities WHERE id=$1',[e.id]);if(existing.rows.length){for(const[code,value]of Object.entries(e.values)){const parameter=TYPES[e.type].params.find(p=>p.code===code)!;const stored=await tx.query<Record<string,unknown>>(`SELECT ${columns[parameter.type]} AS value FROM syezzhaem.entity_parameter_values WHERE entity_id=$1 AND parameter_id=$2`,[e.id,`${e.type}.${code}`]);const actual=stored.rows[0]?.value;if(parameter.type==='integer'?Number(actual)!==value:actual!==value)throw new Error(`Immutable content mismatch: ${e.type}.${code}`)}continue;}await tx.query('INSERT INTO syezzhaem.entities(id,entity_type_id,owner_user_id) VALUES($1,$2,NULL)',[e.id,e.type]);await writeValues(tx,e.id,e.type,e.values);}
+}
+
+/** Read-only readiness verification; never creates or rewrites metadata. */
+export async function verifyMetadata(tx:Sql):Promise<void>{
+ for(const[type,spec]of Object.entries(TYPES)){
+  const row=(await tx.query<{global_type:boolean;parent_type_id:string|null}>('SELECT global_type,parent_type_id FROM syezzhaem.entity_types WHERE id=$1',[type])).rows[0];
+  if(!row||row.global_type!==!!spec.global||row.parent_type_id!==(spec.parent??null))throw new Error(`Type metadata mismatch: ${type}`);
+  for(const p of spec.params){const actual=(await tx.query<Record<string,unknown>>('SELECT data_type,required,multiple,reference_type_id,min_number,max_number,max_length FROM syezzhaem.entity_parameters WHERE id=$1',[`${type}.${p.code}`])).rows[0];const expected={data_type:p.type,required:!p.optional,multiple:false,reference_type_id:p.ref??null,min_number:p.min??null,max_number:p.max??null,max_length:p.length??256};if(!actual||Object.entries(expected).some(([k,v])=>actual[k]!==v))throw new Error(`Parameter metadata mismatch: ${type}.${p.code}`)}
+ }
 }

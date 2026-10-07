@@ -42,3 +42,5 @@ node --test tests/database-r3-storage.test.mjs tests/server-r3-http.test.mjs
 ```
 
 18/18 PASS: additive сохранение R0/R1/R2, exact nested roundtrip, rollback, owner/revision/terminal/replay, действительные role grants, optional metadata без DDL, unknown handler новой metadata, HTTP dispatch и SHA-negative включая matching ETag. PGlite использует один leased backend; это не измерение независимых PostgreSQL-сессий или VPS. Для той же storage-проверки подготовлен optional PG17 adapter; его локальный запуск не выполнен. Операторская установка и независимая приёмка готовой сборки принадлежат координатору.
+
+Координатор дополнительно выполнил GitHub CI run37576984668: exact paired-source hash, 43core/HTTP/embedded cases PASS и11storage cases PASS на реальном PostgreSQL17.11. Авторская граница PGlite выше остаётся исторической; CI не является установкой VPS.

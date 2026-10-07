@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { createHash, randomUUID } from 'node:crypto';
 import { seedR1Metadata } from '../server/r1-metadata.ts';
 import { fromSnapshotV1, toSnapshotV1 } from '../src/snapshot-v1.ts';
-import { step } from '../src/core.ts';
+import { step,take,place,pickActor,targetAt } from '../src/core.ts';
 import type { Envelope, RunDto } from '../src/r1-contracts.ts';
 // @ts-expect-error Executable disposable native PostgreSQL fixture.
 import { startPostgresFixture } from './data-pg-helper.mjs';
@@ -91,7 +91,7 @@ test('AT-36 live API process cutover resolves lost checkpoint/finish ACK using s
       assert.equal(version.api_build_id,buildId);assert.equal(version.process_id,child.pid);
       return {child,port,version};
     }
-    const old=await launch('r1-api-before-update');upstream=old.port;
+    const old=await launch('r2-api-before-update');upstream=old.port;
     async function post(path:string,body:string,cookie?:string,owner?:string) {
       return fetch(origin+path,{method:'POST',headers:{origin,'content-type':'application/json',...(cookie?{cookie}:{}),...(owner?{'x-syezzhaem-expected-user':owner}:{})},body});
     }
@@ -108,13 +108,19 @@ test('AT-36 live API process cutover resolves lost checkpoint/finish ACK using s
     const cookie=cookieHeader.split(';')[0],owner=(await login.json() as {user:{id:string}}).user.id;
     const startBody=JSON.stringify({client_build_id:manifest.build_id,content_version:manifest.content_version,level_id:manifest.level_id,request_id:randomUUID()});
     const started=await (await post('/api/syezzhaem/v1/rpc/run_start_v1',startBody,cookie,owner)).json();assert.equal(started.ok,true);
-    const state=fromSnapshotV1(started.data.checkpoint);step(state,{left:false,right:false,jump:false});
+    const state=fromSnapshotV1(started.data.checkpoint);
+    if(state.contentVersion==='r2-map-1'){
+      for(const [wall,cell] of [[1,9],[2,10]]){const block=state.blocks.find(b=>b.space==='house'&&b.x===7&&b.y===wall)!;assert.equal(take(state,targetAt(state,'house',7,wall)).ok,true);assert.equal(place(state,targetAt(state,'world',cell,0),block.material).ok,true);}
+      for(let i=0;i<12;i++)step(state,{left:false,right:false,jump:false});assert.equal(pickActor(state,'chest:supplies').ok,true);
+      const mob=state.actors!.find(a=>a.kind==='mob')!;mob.state='armed';mob.fuseTicks=37;state.blocks.find(b=>b.portable&&b.material==='wood')!.burnTicks=120;
+      step(state,{left:false,right:false,jump:true});
+    }else step(state,{left:false,right:false,jump:false});
     const checkpointKey=randomUUID(),checkpointBody=JSON.stringify({run_id:started.data.run_id,expected_revision:0,request_id:checkpointKey,snapshot:toSnapshotV1(state,started.data.checkpoint)});
     armed='checkpoint_save_v1';
     await assert.rejects(post('/api/syezzhaem/v1/rpc/checkpoint_save_v1',checkpointBody,cookie,owner));
     const checkpointAck=captured.get('checkpoint_save_v1');assert.ok(checkpointAck);assert.equal(checkpointAck.status,200);assert.equal((checkpointAck.ack as {ok:boolean}).ok,true);assert.equal(checkpointAck.upstream,old.port);
     assert.equal(Number((await fixture.admin.query('SELECT count(*) AS n FROM syezzhaem.request_dedup WHERE user_id=$1 AND request_id=$2',[owner,checkpointKey])).rows[0].n),1);
-    const fresh=await launch('r1-api-after-update');assert.notEqual(fresh.child.pid,old.child.pid);assert.equal(old.child.exitCode,null);upstream=fresh.port;
+    const fresh=await launch('r2-api-after-update');assert.notEqual(fresh.child.pid,old.child.pid);assert.equal(old.child.exitCode,null);upstream=fresh.port;
     const session=await (await fetch(origin+'/api/syezzhaem/auth/get-session',{headers:{cookie}})).json() as {user:{id:string}};assert.equal(session.user.id,owner);
     const retried=await (await post('/api/syezzhaem/v1/rpc/checkpoint_save_v1',checkpointBody,cookie,owner)).json();assert.deepEqual(retried,checkpointAck.ack as Envelope<RunDto>);assert.ok(retried.ok);assert.equal(retried.data.revision,1);
     const attemptsToSave=attempts.filter(x=>x.operation==='checkpoint_save_v1');assert.deepEqual(attemptsToSave.map(x=>x.body_hash),[hash(checkpointBody),hash(checkpointBody)]);assert.deepEqual(attemptsToSave.map(x=>x.upstream),[old.port,fresh.port]);
@@ -125,7 +131,7 @@ test('AT-36 live API process cutover resolves lost checkpoint/finish ACK using s
     armed='run_finish_v1';await assert.rejects(post('/api/syezzhaem/v1/rpc/run_finish_v1',finishBody,cookie,owner));
     const finishAck=captured.get('run_finish_v1');assert.ok(finishAck);assert.equal(finishAck.status,200);assert.equal((finishAck.ack as {ok:boolean}).ok,true);assert.equal(finishAck.upstream,fresh.port);
     // The still-running old process shares the same dedup and can resolve a newer
-    // process's accepted operation under the same supported R1 contract.
+    // process's accepted operation under the same supported R2 implementation; this is not an incompatible R1 rollback.
     upstream=old.port;
     const finished=await (await post('/api/syezzhaem/v1/rpc/run_finish_v1',finishBody,cookie,owner)).json();assert.deepEqual(finished,finishAck.ack as Envelope<RunDto>);assert.ok(finished.ok);assert.equal(finished.data.revision,2);assert.equal(finished.data.lifecycle,'lost');
     const history=await (await post('/api/syezzhaem/v1/rpc/history_list_v1','{}',cookie,owner)).json();assert.equal(history.data.items.length,1);assert.equal(history.data.items[0].run_id,started.data.run_id);
