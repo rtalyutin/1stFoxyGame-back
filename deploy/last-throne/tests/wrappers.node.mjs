@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdir, mkdtemp, readFile, writeFile, rm, symlink, chmod, access } from 'node:fs/promises';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
-import { execFile } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
 import { promisify } from 'node:util';
 import { assemble } from '../assemble.mjs';
 import { readPrivateEnv, commandPlan, prepareOperator } from '../operator.mjs';
@@ -21,7 +21,7 @@ async function fixture(t) {
   for (const name of ['package.json', 'package-lock.json', 'tsconfig.json']) await writeFile(path.join(back, name), '{}');
   await mkdir(web, { recursive: true }); await writeFile(path.join(web, 'index.html'), 'canonical frontend');
   const digest = await pairedSourceHash(back, web), archives = {};
-  for (const id of ['r0-002', 'r1-002', 'r2-001', 'r3-001']) {
+  for (const id of ['r0-002', 'r1-002', 'r2-001', 'r3-001', 'r3-content-002']) {
     const dir = path.join(ready, 'releases', id); const files = { 'web/index.html': `ready-${id}`, 'server/index.mjs': '// fixture only', 'scripts/migrate.mjs': '// fixture migration' };
     for (const [name, content] of Object.entries(files)) { await mkdir(path.dirname(path.join(dir, name)), { recursive: true }); await writeFile(path.join(dir, name), content); }
     const manifest = { releaseId: id, sourceHash: digest, runtimeMajor: 24, rollbackMode: 'frontend_only', clientEntry: 'web/index.html', serverEntry: 'server/index.mjs', migrationEntry: 'scripts/migrate.mjs',
@@ -166,6 +166,46 @@ test('failed additive migration leaves R2 selected and never installs or switche
   const calls = await readFile(trace, 'utf8'); assert.match(calls, /migrate-release.mjs r3-001/);
   assert.equal(calls.includes('update r3-001'), false); await assert.rejects(access(path.join(config.values.TD_RELEASES_DIR, 'r3-001')));
 });
+test('camera plan keeps API001, uses content002 after base update, and performs no runtime or database mutations', async t => {
+  const e = await privateEnv(t), config = await readPrivateEnv(e.file);
+  const args = { staging:'/candidate',output:'/prepared',envFile:e.file,runtimeDir:'/runtime',config };
+  const script = commandPlan({...args,mode:'camera-r3'});
+  assert.match(script,/apiReleaseId!=="r3-001"/);
+  assert.match(script,/r3-api-7b084f31d98e7e6f/);
+  assert.equal(/compose[^\n]*\b(?:build|stop|restart|down|up|run)\b/.test(script),false);
+  assert.equal(/migrate-release|psql|cp -a|update r3-content-002/.test(script),false);
+  assert.ok(script.indexOf('/td/api/v1/version') < script.indexOf('ops/install-release.mjs'));
+  assert.ok(script.indexOf('ops/install-release.mjs') < script.indexOf('ops/cli.mjs content r3-content-002'));
+  for(const mode of ['first-install','upgrade-r0-r1','upgrade-r2']) {
+    const initial = commandPlan({...args,mode});
+    assert.ok(initial.indexOf('ops/cli.mjs update r3-001') < initial.indexOf('ops/cli.mjs content r3-content-002'));
+    assert.equal(initial.includes('ops/cli.mjs update r3-content-002'),false);
+  }
+  const file=path.join(e.root,'camera.sh');await writeFile(file,script);await exec('/bin/sh',['-n',file]);
+});
+test('camera live API mismatch blocks install; failed content stops readback and preserves the durable old selection', async t => {
+  const e = await privateEnv(t), config = await readPrivateEnv(e.file);
+  await mkdir(config.values.TD_STATE_DIR,{recursive:true});
+  const selection=path.join(config.values.TD_STATE_DIR,'selection.json');
+  const old=JSON.stringify({apiReleaseId:'r3-001',clientReleaseId:'r3-001'});await writeFile(selection,old);
+  const bin=path.join(e.root,'bin');await mkdir(bin);
+  const trace=path.join(e.root,'trace'), scriptFile=path.join(e.root,'camera.sh');
+  await writeFile(path.join(bin,'node'),'#!/bin/sh\ncase "$1" in */ops/install-release.mjs) printf "install\\n" >> "$TASK_TRACE"; exit 0;; esac\nexec "$TASK_REAL_NODE" "$@"\n',{mode:0o700});
+  await writeFile(path.join(bin,'docker'),'#!/bin/sh\nprintf "docker %s\\n" "$*" >> "$TASK_TRACE"\ncase "$*" in *"content r3-content-002"*) exit 17;; *"ops/cli.mjs status"*) printf \'{"api":{"releaseId":"r3-001"},"selection":{"apiReleaseId":"r3-001","clientReleaseId":"r3-001"},"journal":{"phase":"complete"}}\\n\';; esac\n',{mode:0o700});
+  await writeFile(path.join(bin,'curl'),'#!/bin/sh\nprintf "curl %s\\n" "$*" >> "$TASK_TRACE"\nprintf \'{"releaseId":"%s","versions":{"backend":"r3-api-7b084f31d98e7e6f"}}\\n\' "$TASK_FAKE_API"\n',{mode:0o700});
+  const script=commandPlan({staging:path.join(e.root,'candidate'),output:'/unused',envFile:e.file,runtimeDir:path.join(e.root,'runtime'),mode:'camera-r3',config});
+  await writeFile(scriptFile,script);
+  const environment={...process.env,PATH:`${bin}:/usr/bin:/bin`,TASK_TRACE:trace,TASK_REAL_NODE:process.execPath};
+  for(const [api,code] of [['r3-other',1],['r3-001',17]]) {
+    await writeFile(trace,'');let failure;
+    try {await exec('/bin/sh',[scriptFile],{timeout:10000,env:{...environment,TASK_FAKE_API:api}});}catch(error){failure=error;}
+    assert.equal(failure?.code,code);assert.equal(await readFile(selection,'utf8'),old);
+    const calls=await readFile(trace,'utf8');
+    assert.equal(calls.includes('install\n'),api==='r3-001');
+    assert.equal(calls.includes('content r3-content-002'),api==='r3-001');
+    assert.equal(calls.includes('/td/current.json'),false);assert.equal(calls.includes('bootstrap?'),false);
+  }
+});
 test('operator CLI prepares the real exact R3 package without invoking Docker or disclosing env secrets', async t => {
   const staging = process.env.TD_TEST_STAGING;
   if (!staging) { t.skip('Set TD_TEST_STAGING to the verified assembled R3 workspace'); return; }
@@ -177,4 +217,75 @@ test('operator CLI prepares the real exact R3 package without invoking Docker or
   for (const secret of ['api-secret', 'owner-secret', 'postgresql://']) assert.equal((result.stdout + result.stderr).includes(secret), false);
   await assert.rejects(access(marker));
   const roleSql = await readFile(path.join(output, 'roles.sql'), 'utf8'); assert.match(roleSql, /NOINHERIT/); assert.match(roleSql, /pg_auth_members/); assert.equal(roleSql.includes('api-secret'), false);
+});
+
+test('actual archived API001 keeps its Node PID and cloud save through camera content002 promotion and rollback', {timeout:45000}, async t => {
+  const staging=process.env.TD_TEST_STAGING, dependencies=process.env.TD_TEST_DEPENDENCIES;
+  if(!staging||!dependencies){t.skip('Set TD_TEST_STAGING and TD_TEST_DEPENDENCIES for the actual API/PGlite child check');return;}
+  const root=await temporary(t), releasesDir=path.join(staging,'releases');
+  const {Supervisor,requestJson}=await import(pathToFileURL(path.join(releasesDir,'r2-001/ops/supervisor.mjs')));
+  const worker=path.join(root,'api-child.mjs');
+  await writeFile(worker,`import {PGlite} from ${JSON.stringify(pathToFileURL(path.join(dependencies,'@electric-sql/pglite/dist/index.js')).href)};
+import {migrate} from ${JSON.stringify(pathToFileURL(path.join(releasesDir,'r3-001/scripts/migrate.mjs')).href)};
+import {createApp} from ${JSON.stringify(pathToFileURL(path.join(releasesDir,'r3-001/server/app.mjs')).href)};
+const db=new PGlite(process.env.PGLITE_DATA_DIR);const raw=async(sql,params=[])=>params.length?db.query(sql,params):(await db.exec(sql)).at(-1)??{rows:[]};
+let tail=Promise.resolve();async function acquire(){const previous=tail;let release;tail=new Promise(r=>release=r);await previous;return release;}
+const pool={query:async(...args)=>{const unlock=await acquire();try{return await raw(...args);}finally{unlock();}},connect:async()=>{const unlock=await acquire();return{query:raw,release:unlock};}};
+await migrate(pool);const app=await createApp({pool,releasesDir:process.env.RELEASES_DIR,releaseId:'r3-001',secureCookies:false});
+await app.listen({port:Number(process.env.PORT),host:'127.0.0.1'});console.log(JSON.stringify({port:app.server.address().port}));process.once('SIGTERM',async()=>{await app.close();await db.close();process.exit(0);});
+`);
+  let starts=0, migrations=0;
+  class LocalSupervisor extends Supervisor {
+    // The production app runs in a real child; only its local DB transport is substituted.
+    async migrate(){migrations++;}
+    async startChild(id){
+      const existing=this.children.get(id);if(existing&&!existing.exited)return existing;
+      assert.equal(id,'r3-001');starts++;
+      const child=spawn(process.execPath,[worker],{env:{...process.env,RELEASES_DIR:releasesDir,PORT:'0',PGLITE_DATA_DIR:path.join(root,'database')},stdio:['ignore','pipe','pipe']});
+      let output='';child.stdout.on('data',c=>{output+=c;});child.stderr.on('data',c=>{output+=c;});
+      // Discover the actual ephemeral port; production app logging remains disabled.
+      const deadline=Date.now()+15000;let port;
+      while(Date.now()<deadline&&!port){
+        for(const line of output.split('\n')){try{const log=JSON.parse(line);if(Number.isInteger(log.port)&&log.port>0)port=log.port;}catch{}}
+        if(child.exitCode!==null)throw Error('Actual API child failed: '+output);if(!port)await new Promise(r=>setTimeout(r,30));
+      }
+      if(!port){child.kill('SIGKILL');throw Error('Actual API readiness timeout: '+output);}
+      const slot={id,port,child,active:0,exited:false,retiring:false};this.children.set(id,slot);child.once('exit',()=>{slot.exited=true;});
+      assert.equal((await requestJson(port,'/api/v1/ready')).releaseId,id);return slot;
+    }
+  }
+  const runtime=new LocalSupervisor({releasesDir,stateDir:path.join(root,'state'),launcherDir:path.join(staging,'launcher'),port:0,childPorts:[],controlEnabled:false});
+  try {
+    await runtime.start();await runtime.operate('update','r3-001');
+    const apiPid=runtime.info().api.pid, gatewayPid=runtime.info().gatewayPid;
+    const origin=`http://127.0.0.1:${runtime.port}`;
+    const call=async(method,url,body,cookie)=>{
+      const response=await fetch(origin+'/td/api/v1'+url,{method,headers:{origin,...(body===undefined?{}:{'content-type':'application/json'}),...(cookie?{cookie}:{})},...(body===undefined?{}:{body:JSON.stringify(body)})});
+      assert.ok(response.ok,await response.clone().text());return response;
+    };
+    const guest=await call('POST','/guest-session',{}), cookie=guest.headers.get('set-cookie').split(';')[0];
+    const {randomUUID}=await import('node:crypto');
+    const {createGame,createSnapshot}=await import(pathToFileURL(path.join(releasesDir,'r3-001/core/game-core-r3.ts')));
+    const {defaultR3Content}=await import(pathToFileURL(path.join(releasesDir,'r3-001/core/content-r3.ts')));
+    const snapshot=createSnapshot(createGame(defaultR3Content,42));
+    const newRun=async clientReleaseId=>(await call('POST','/runs',{clientRunId:randomUUID(),clientReleaseId,coreVersion:'r3-core-1',contentVersion:'r3-content-1',seed:42},cookie)).json();
+    const oldRun=await newRun('r3-001');
+    const checkpoint={requestId:randomUUID(),expectedRevision:1,snapshotSchemaVersion:4,snapshot};
+    const saved=await (await call('PUT',`/runs/${oldRun.id}/checkpoint`,checkpoint,cookie)).json();
+    await runtime.operate('content','r3-content-002');
+    assert.equal(runtime.info().api.pid,apiPid);assert.equal(runtime.info().gatewayPid,gatewayPid);assert.equal(starts,1);assert.equal(migrations,1);
+    assert.equal((await requestJson(runtime.port,'/td/current.json')).releaseId,'r3-content-002');
+    const bootstrap=await requestJson(runtime.port,'/td/api/v1/bootstrap?clientReleaseId=r3-content-002');
+    assert.equal(bootstrap.apiReleaseId,'r3-001');assert.equal(bootstrap.clientReleaseId,'r3-content-002');assert.equal(bootstrap.versions.content,'r3-content-1');
+    assert.equal((await requestJson(runtime.port,'/td/api/v1/version')).pid,apiPid);
+    assert.deepEqual((await (await call('GET',`/runs/${oldRun.id}/checkpoint`,undefined,cookie)).json()).snapshot,snapshot);
+    assert.deepEqual(await (await call('PUT',`/runs/${oldRun.id}/checkpoint`,checkpoint,cookie)).json(),saved);
+    const cameraRun=await newRun('r3-content-002');
+    await call('PUT',`/runs/${cameraRun.id}/checkpoint`,{...checkpoint,requestId:randomUUID()},cookie);
+    await runtime.operate('rollback','r3-001');
+    assert.equal(runtime.info().api.pid,apiPid);assert.equal(starts,1);assert.equal(migrations,1);
+    assert.equal((await requestJson(runtime.port,'/td/current.json')).releaseId,'r3-001');
+    assert.deepEqual((await (await call('GET',`/runs/${cameraRun.id}/checkpoint`,undefined,cookie)).json()).snapshot,snapshot);
+    assert.equal((await requestJson(runtime.port,'/td/api/v1/bootstrap?clientReleaseId=r3-content-002')).apiReleaseId,'r3-001');
+  } finally {await runtime.close({force:true});}
 });

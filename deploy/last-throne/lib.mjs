@@ -2,13 +2,14 @@ import { createHash } from 'node:crypto';
 import { lstat, readdir, readFile, realpath, mkdir, rename, rmdir } from 'node:fs/promises';
 import path from 'node:path';
 
-export const RELEASE_ID = 'r3-001';
-export const SOURCE_HASH = '2233389d406901529b55b5cf7c9ecfef7b1c5726c12cbf0b0495bae7349bfadb';
+export const RELEASE_ID = 'r3-content-002';
+export const SOURCE_HASH = '0dfe1bcaef0f7d94e05d5f50495bcfb0f84227b8f93b113b38cf5bdf0c732c83';
 export const RELEASE_HASHES = Object.freeze({
   'r0-002': '40bdbb68f736c3f7f6bde163dceacfddd750bf8f38c6038729760585806f0cc6',
   'r1-002': 'daf850af834de99afc4fa31ba86070b47e4ce1decfef71befa2970e5b4066823',
   'r2-001': 'dafc60169b772214823799f89fc623d3b4f1f02ab0e69710f57e6ee57aa54dbf',
   'r3-001': 'defab06551d52e9cc71c0a6d56c769e9030e51649756cecfba659a70c5acfc63',
+  'r3-content-002': '7d65186b3f8522585dc4ef17aa91c84a46994e63f57f656720a970916b50852a',
 });
 export const SOURCE_DIRS = ['server', 'web', 'core', 'db', 'ops', 'scripts', 'launcher'];
 export const BACK_DIRS = ['server', 'core', 'db', 'ops', 'scripts', 'launcher', 'tests', 'docs'];

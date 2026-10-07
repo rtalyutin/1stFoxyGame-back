@@ -43,7 +43,7 @@ jobs:
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
           repository: rtalyutin/1stFoxyGame-front
-          ref: babf28bdc01e559ac16bab117c15805e1aad37ff
+          ref: eb590b49e07a3be7b7725182565939f615f558c3
           path: front
           persist-credentials: false
       - name: Set up exact Node24
@@ -80,7 +80,7 @@ jobs:
         run: |
           node --input-type=module <<'JS'
           import { build } from 'vite';
-          await build({ root: 'web', base: './', define: { __RELEASE_ID__: JSON.stringify('r3-001') }, build: { outDir: '../ci-web', emptyOutDir: true } });
+          await build({ root: 'web', base: './', define: { __RELEASE_ID__: JSON.stringify('r3-content-002') }, build: { outDir: '../ci-web', emptyOutDir: true } });
           JS
       - name: Verify deployment command guards
         working-directory: back
