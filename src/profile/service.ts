@@ -1,4 +1,4 @@
-import {settleForge,bonusForSeconds,productionPriceGoldMilli,validateForgeState,type ProductionId} from '../forge/economy.js';
+import {settleForge,bonusForSeconds,productionPriceGoldMilli,validateForgeState,FORGE_COUNT_MAX,type ProductionId} from '../forge/economy.js';
 import {workshopView,type WorkshopView} from '../forge/view.js';
 import { LEGACY_BALANCE } from '../balance/model.js';
 import { createHash, randomInt, randomUUID } from 'node:crypto';
@@ -94,7 +94,7 @@ export class ProfileService {
       if (operation.expectedRevision!==tx.profile.revision) reject('REVISION_CONFLICT',409);
       const now=this.clock();if(!Number.isSafeInteger(now)||now<0)reject('PROFILE_STORAGE_UNAVAILABLE',503);
       if(!tx.forgeHistory||tx.forgeHistory.at(-1)?.revision!==tx.currentBalance?.revision||!tx.currentBalance?.compiled.forge)reject('BALANCE_STORAGE_UNAVAILABLE',503);
-      let settlement;try{settlement=settleForge(tx.forge,tx.forgeHistory,now);}catch{reject('PROFILE_STORAGE_UNAVAILABLE',503);}
+      let settlement;try{settlement=settleForge(tx.forge,tx.forgeHistory,now,(MAX_GOLD-parseGoldMilli(tx.profile.goldMilli)).toString());}catch{reject('PROFILE_STORAGE_UNAVAILABLE',503);}
       tx.forge=settlement!.state;this.credit(tx.profile,settlement!.goldMilli);
       const visualRewards:ConfirmedReward[]=[];
       await this.apply(tx,operation,visualRewards);
@@ -109,10 +109,11 @@ export class ProfileService {
       return result;
     },operation.operationId);
   }
-  async getWorkshop(accountId:string):Promise<WorkshopView>{return this.repository.transaction(accountId,tx=>{
-    const config=tx.currentBalance?.compiled.forge;if(!config||tx.forgeHistory?.at(-1)?.revision!==tx.currentBalance?.revision)reject('BALANCE_STORAGE_UNAVAILABLE',503);
-    return workshopView(tx.forge,config,tx.currentBalance!.revision,this.clock());
-  });}
+  async getWorkshop(accountId:string):Promise<WorkshopView>{
+    const {forge,balance}=await this.repository.getWorkshopState(accountId);
+    const config=balance.compiled.forge;if(!config)reject('BALANCE_STORAGE_UNAVAILABLE',503);
+    return workshopView(forge,config,balance.revision,this.clock());
+  }
   private credit(profile:Profile,amount:string):void {const sum=parseGoldMilli(profile.goldMilli)+parseGoldMilli(amount);if(sum>MAX_GOLD)reject('PROFILE_OVERFLOW',503);profile.goldMilli=sum.toString();}
   private forgeSafe(tx:TransactionContext,op:Operation):void{
     if(!tx.run)return;const sim=this.restore(tx.run);if(!['shop','gameOver'].includes(sim.state.phase))reject('INVALID_PHASE');
@@ -203,12 +204,12 @@ export class ProfileService {
         if(p.balanceRevision!==tx.currentBalance!.revision)reject('BALANCE_REVISION_CONFLICT',409);
         if(op.type==='forge_tap'){this.credit(tx.profile,config.tapGoldMilli[tx.forge.tapLevel]!);break;}
         let cost:string|null;
-        if(op.type==='forge_buy'){const id=p.productionId as ProductionId;cost=productionPriceGoldMilli(config,id,tx.forge.counts[id]);}
+        if(op.type==='forge_buy'){const id=p.productionId as ProductionId;if(tx.forge.counts[id]>=FORGE_COUNT_MAX)reject('PROFILE_OVERFLOW',503);cost=productionPriceGoldMilli(config,id,tx.forge.counts[id]);}
         else cost=(p.upgrade==='tap'?config.tapUpgradeCostGoldMilli[tx.forge.tapLevel]:config.organizationUpgradeCostGoldMilli[tx.forge.organizationLevel])??null;
         if(cost===null)reject(op.type==='forge_buy'?'PRODUCTION_PRICE_OVERFLOW':'MAX_UPGRADE');
         if(parseGoldMilli(tx.profile.goldMilli)<parseGoldMilli(cost))reject('INSUFFICIENT_RESOURCES');
         tx.profile.goldMilli=(parseGoldMilli(tx.profile.goldMilli)-parseGoldMilli(cost)).toString();
-        if(op.type==='forge_buy'){const id=p.productionId as ProductionId;if(tx.forge.counts[id]>=Number.MAX_SAFE_INTEGER)reject('PROFILE_OVERFLOW',503);tx.forge.counts[id]++;}
+        if(op.type==='forge_buy'){const id=p.productionId as ProductionId;tx.forge.counts[id]++;}
         else if(p.upgrade==='tap')tx.forge.tapLevel++;else tx.forge.organizationLevel++;
         break;
       }

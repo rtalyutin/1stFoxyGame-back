@@ -65,6 +65,9 @@ test('invalid JSON has a bounded error envelope without echoing the payload', as
 
 test('OpenAPI validates and any remaining future schema references resolve', async () => {
   await SwaggerParser.validate(fileURLToPath(contractUrl));
+  const operationIds=[];
+  for(const path of Object.values(contract.paths))for(const [method,operation]of Object.entries(path))if(['get','post','put','patch','delete','head','options','trace'].includes(method)&&operation.operationId)operationIds.push(operation.operationId);
+  assert.equal(new Set(operationIds).size,operationIds.length,'Generated clients require unique operation IDs');
   for (const operation of Object.values(contract['x-planned-paths'])) {
     assert.equal(operation.implemented, false);
     assert.equal(operation.release, 'R3');

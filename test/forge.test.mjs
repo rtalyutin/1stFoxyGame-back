@@ -16,6 +16,32 @@ async function fixture(){let now=1000;const repo=new MemoryRepository(()=>now),s
 async function funded(f,gold='1000000000'){await f.repo.transaction(f.accountId,tx=>{tx.profile.goldMilli=gold;});}
 async function buy(f,id='apprentice'){return f.perform('forge_buy',{productionId:id,balanceRevision:await f.quote()});}
 const ownership=result=>({runId:result.run.runId,ownerEpoch:result.run.ownerEpoch});
+
+test('automatic income caps actual credit, advances marker and leaves a full wallet able to spend',async()=>{
+ const f=await fixture(),max=9223372036854775807n;
+ await f.publish({'forge.productions.apprentice.rateGoldMilliPerSecond':max.toString()});
+ await f.repo.transaction(f.accountId,tx=>{tx.profile.goldMilli=(max-10n).toString();tx.forge.counts.apprentice=1;});
+ f.advance(2000);const command=await f.command('forge_settle');const settled=await f.service.perform(f.accountId,command);
+ assert.equal(settled.profile.goldMilli,max.toString());assert.equal(settled.workshop.lastSettlement.goldMilli,'10');assert.equal(settled.workshop.settledAtMs,f.now());
+ f.advance(2000);const replay=await f.service.perform(f.accountId,command);assert.equal(replay.replayed,true);assert.deepEqual(replay.workshop,settled.workshop);
+ const bought=await buy(f,'smelter');assert.equal(bought.workshop.lastSettlement.goldMilli,'0');assert.equal(bought.workshop.settledAtMs,f.now());assert.equal(bought.profile.goldMilli,(max-250000n).toString());
+});
+
+test('maximum affordable production count rejects before mutation and has no buy quote',async()=>{
+ const f=await fixture();await f.publish({'forge.productions.apprentice.baseCostGoldMilli':'0','forge.productions.apprentice.rateGoldMilliPerSecond':'0'});
+ await f.repo.transaction(f.accountId,tx=>{tx.forge.counts.apprentice=2147483647;});
+ const before=await f.repo.getProfile(f.accountId),command=await f.command('forge_buy',{productionId:'apprentice',balanceRevision:await f.quote()});
+ await assert.rejects(f.service.perform(f.accountId,command),e=>e.code==='PROFILE_OVERFLOW'&&e.statusCode===503);
+ assert.deepEqual(await f.repo.getProfile(f.accountId),before);assert.equal(await f.repo.getOperation(f.accountId,command.operationId),null);
+ const view=await f.service.getWorkshop(f.accountId);assert.equal(view.productions[0].owned,2147483647);assert.equal(view.productions[0].nextCostGoldMilli,null);
+});
+
+test('workshop reads bypass the mutation transaction and operation journal',async()=>{
+ const f=await fixture();const before=await f.repo.getProfile(f.accountId);
+ f.repo.transaction=()=>{throw new Error('Workshop GET loaded the mutation journal');};
+ const view=await f.service.getWorkshop(f.accountId);assert.equal(view.productions[0].owned,0);assert.equal(view.lastSettlement,undefined);
+ assert.deepEqual(await f.repo.getProfile(f.accountId),before);
+});
 test('manual tap and production share authoritative wallet, exact growing price and immutable receipt',async()=>{
  const f=await fixture();const command=await f.command('forge_tap',{balanceRevision:await f.quote()});const first=await f.service.perform(f.accountId,command);assert.equal(first.profile.goldMilli,'1000');assert.equal(first.workshop.tapGoldMilli,'1000');
  f.advance(60000);const replay=await f.service.perform(f.accountId,command);assert.equal(replay.replayed,true);assert.deepEqual(replay.workshop,first.workshop);assert.equal((await f.repo.getProfile(f.accountId)).goldMilli,'1000');

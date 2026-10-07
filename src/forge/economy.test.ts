@@ -207,6 +207,14 @@ test('fraction accumulation and overflow use exact integer arithmetic', () => {
   assert.throws(() => addForgeFraction('1000000', 0n));
 });
 
+test('capped settlement advances time without converting excessive income to an invalid wallet amount',()=>{
+  const c=config();c.productions.apprentice.rateGoldMilliPerSecond='9223372036854775807';
+  const s=state();s.counts.apprentice=2;s.fractionMillionths='123';
+  const result=settleForge(s,[{revision:'high-rate',publishedAtMs:0,config:c}],2000,'7');
+  assert.equal(result.goldMilli,'7');assert.equal(result.state.settledAtMs,2000);assert.equal(result.state.fractionMillionths,'123');
+  assert.equal(settleForge(result.state,[{revision:'high-rate',publishedAtMs:0,config:c}],2000,'7').goldMilli,'0');
+});
+
 test('partitioning time does not lose gold or fractions across arbitrary publications', () => {
   const revisions = history();
   for (let index = 1; index <= 15; index++) {

@@ -162,10 +162,12 @@ export function productionPriceGoldMilli(config: ForgeConfig, id: ProductionId, 
 }
 
 /** Adds exact millionths of goldMilli; callers persist the returned remainder. */
-export function addForgeFraction(fractionMillionths: string, numeratorMillionths: bigint): ForgeFractionResult {
+export function addForgeFraction(fractionMillionths: string, numeratorMillionths: bigint, maximumGoldMilli?: string): ForgeFractionResult {
   if (numeratorMillionths < 0n) throw new Error('Negative forge income');
   const total = fraction(fractionMillionths) + numeratorMillionths;
-  const gold = total / FORGE_FRACTION_DENOMINATOR;
+  const earned = total / FORGE_FRACTION_DENOMINATOR;
+  const maximum = maximumGoldMilli === undefined ? undefined : money(maximumGoldMilli);
+  const gold = maximum !== undefined && earned > maximum ? maximum : earned;
   if (gold > GOLD_MAX_MILLI) throw new Error('Forge gold overflow');
   return { goldMilli: gold.toString(), fractionMillionths: (total % FORGE_FRACTION_DENOMINATOR).toString() };
 }
@@ -187,7 +189,7 @@ function validateHistory(history: readonly ForgeBalanceHistoryEntry[]): void {
  * advances to now. Each publication splits that prefix at its actual timestamp.
  * Purchases/upgrades must settle before changing counts or organization level.
  */
-export function settleForge(state: ForgeState, history: readonly ForgeBalanceHistoryEntry[], nowMs: number): ForgeSettlement {
+export function settleForge(state: ForgeState, history: readonly ForgeBalanceHistoryEntry[], nowMs: number, maximumGoldMilli = GOLD_MAX_MILLI.toString()): ForgeSettlement {
   const next = validateForgeState(state);
   integer(nowMs);
   validateHistory(history);
@@ -207,7 +209,9 @@ export function settleForge(state: ForgeState, history: readonly ForgeBalanceHis
     cursor = end;
     if (nextEntry && nextEntry.publishedAtMs <= cursor) activeIndex++;
   }
-  const income = addForgeFraction(state.fractionMillionths, numerator);
+  // Automatic income cannot lock an account at its finite wallet cap. Excess
+  // whole units are discarded, while time advances and exact carry survives.
+  const income = addForgeFraction(state.fractionMillionths, numerator, maximumGoldMilli);
   next.settledAtMs = nowMs;
   next.fractionMillionths = income.fractionMillionths;
   return { state: next, goldMilli: income.goldMilli, elapsedMs, creditedMs, discardedMs: elapsedMs - creditedMs };

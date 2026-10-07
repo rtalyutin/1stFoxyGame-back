@@ -44,8 +44,17 @@ export async function publishBalance(c:PoolClient,actorId:string,expectedRevisio
  return candidate;
 }
 
-export async function readForgeHistory(c:PoolClient):Promise<import('../forge/economy.js').ForgeBalanceHistoryEntry[]>{
+export async function readForgeHistory(c:PoolClient,settledAtMs?:number,cache?:Map<string,import('../forge/economy.js').ForgeConfig>):Promise<import('../forge/economy.js').ForgeBalanceHistoryEntry[]>{
  const entries=(await c.query<{id:string;published_at:string}>(`SELECT e.id,v.value_timestamp AS published_at FROM entities e JOIN entity_parameter_values v ON v.entity_id=e.id JOIN entity_parameters p ON p.id=v.parameter_id AND p.code='published-at' JOIN entity_parameter_values s ON s.entity_id=e.id JOIN entity_parameters sp ON sp.id=s.parameter_id AND sp.code='schema-version' WHERE e.entity_type_id=$1 AND e.state='active' AND s.value_text='runner-balance.2' ORDER BY (SELECT ov.value_integer FROM entity_parameter_values ov JOIN entity_parameters op ON op.id=ov.parameter_id WHERE ov.entity_id=e.id AND op.code='publication-order')`,[BALANCE_TYPE_ID])).rows;
  if(!entries.length)throw new BalanceError('BALANCE_STORAGE_UNAVAILABLE',503);
- const result=[];for(const row of entries){const config=(await readBalance(c,row.id)).compiled.forge;if(!config)throw new BalanceError('BALANCE_STORAGE_UNAVAILABLE',503);result.push({revision:row.id,publishedAtMs:new Date(row.published_at).getTime(),config});}return result;
+ // Only the revision active at the marker and later publications can affect
+ // this settlement. Same-timestamp publications retain their immutable order.
+ let start=0;
+ if(settledAtMs!==undefined)for(let i=0;i<entries.length&&new Date(entries[i]!.published_at).getTime()<=settledAtMs;i++)start=i;
+ const result=[];for(const row of entries.slice(start)){
+  let config=cache?.get(row.id);
+  if(!config){config=(await readBalance(c,row.id)).compiled.forge;if(!config)throw new BalanceError('BALANCE_STORAGE_UNAVAILABLE',503);
+   if(cache){if(cache.size>=256)cache.delete(cache.keys().next().value!);cache.set(row.id,structuredClone(config));}}
+  result.push({revision:row.id,publishedAtMs:new Date(row.published_at).getTime(),config:structuredClone(config)});
+ }return result;
 }

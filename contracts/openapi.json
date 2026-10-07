@@ -1626,7 +1626,7 @@
     },
     "/api/v1/workshop": {
       "get": {
-        "operationId": "getProfile",
+        "operationId": "getWorkshop",
         "x-release": "R3/R4",
         "responses": {
           "200": {

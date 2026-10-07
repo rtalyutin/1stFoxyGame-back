@@ -14,7 +14,9 @@ const url=process.env.DATABASE_URL;if(!url)throw new Error('DATABASE_URL is requ
 const q=s=>`"${s.replaceAll('"','""')}"`;
 async function atomic(c,fn,compatible=true){await c.query('BEGIN');if(compatible)await c.query("SELECT set_config('foxy.balance_writer','runner-balance.1',true),set_config('foxy.forge_writer','runner-forge.1',true)");try{const result=await fn();await c.query('COMMIT');return result;}catch(e){await c.query('ROLLBACK');throw e;}}
 test('PostgreSQL R5 preserves property, persists exact economics, guards legacy writers and immutable history',async t=>{
- const admin=new Client({connectionString:url});await admin.connect();const schema='foxy_r5_'+randomUUID().replaceAll('-','');await admin.query(`CREATE SCHEMA ${q(schema)}`);await admin.query(`SET search_path TO ${q(schema)},public`);const pool=new Pool({connectionString:url,options:`-c search_path=${schema},public`}),repo=new PgRepository(pool);t.after(async()=>{await pool.end();await admin.query(`DROP SCHEMA ${q(schema)} CASCADE`);await admin.end();});
+ const admin=new Client({connectionString:url});await admin.connect();const schema='foxy_r5_'+randomUUID().replaceAll('-','');await admin.query(`CREATE SCHEMA ${q(schema)}`);await admin.query(`SET search_path TO ${q(schema)},public`);const pool=new Pool({connectionString:url,options:`-c search_path=${schema},public`}),repo=new PgRepository(pool),sqlCalls=[];
+ pool.on('connect',c=>{const query=c.query.bind(c);c.query=(...args)=>{sqlCalls.push(String(args[0]));return query(...args);};});
+ t.after(async()=>{await pool.end();await admin.query(`DROP SCHEMA ${q(schema)} CASCADE`);await admin.end();});
  assert.equal(forgeSeedSql(),readFileSync(new URL('../../migrations/006-forge.sql',import.meta.url),'utf8'));
  const migrations=readMigrations();await migrate(admin,migrations.filter(m=>m.id<'006-forge.sql'));
  const accountId=randomUUID(),clientId=randomUUID();await repo.provision([{accountId,login:'r5.sql.account',passwordHash:await hashPassword('r5-disposable-test-password')}]);
@@ -29,4 +31,23 @@ test('PostgreSQL R5 preserves property, persists exact economics, guards legacy 
  await t.test('old application writer cannot debit wallet, quantities, or run journal',async()=>{for(const [id,code]of [[profileId,'gold-milli'],[(await admin.query('SELECT id FROM entities WHERE entity_type_id=$1',[FORGE_TYPE_ID])).rows[0].id,'apprentice']])await assert.rejects(atomic(admin,async()=>{await new EntityStore(admin).set(id,code,code==='gold-milli'?{type:'decimal',value:'1'}:{type:'integer',value:5n});},false),e=>e.code==='23514');const p=await repo.getProfile(accountId);assert.equal(p.goldMilli,'999976000');});
  await t.test('new revisions keep immutable ordered history and reject invalid base price atomically',async()=>{await repo.setBalanceAdmin(accountId,true);let balance=await repo.getBalance();await assert.rejects(repo.publishBalance(accountId,balance.revision,{...balance.values,'forge.productions.apprentice.baseCostGoldMilli':'25001'}),e=>e.code==='INVALID_BALANCE');const edited=await repo.publishBalance(accountId,balance.revision,{...balance.values,'forge.productions.apprentice.rateGoldMilliPerSecond':'100'});assert.notEqual(edited.revision,balance.revision);const orders=(await admin.query("SELECT v.value_integer FROM entity_parameter_values v JOIN entity_parameters p ON p.id=v.parameter_id WHERE p.code='publication-order' ORDER BY v.value_integer")).rows.map(r=>r.value_integer);assert.deepEqual(orders,['1','2']);await assert.rejects(atomic(admin,()=>admin.query("UPDATE entity_parameter_values SET value_integer=3 WHERE entity_id=$1 AND parameter_id=(SELECT id FROM entity_parameters WHERE code='publication-order')",[edited.revision])),e=>e.code==='23514');const before=await repo.getProfile(accountId);await assert.rejects(perform('forge_buy',{productionId:'apprentice',balanceRevision:balance.revision}),e=>e.code==='BALANCE_REVISION_CONFLICT');assert.deepEqual(await repo.getProfile(accountId),before);});
  await t.test('database constrains quantities, levels, fixed carry and singleton workshop owner',async()=>{const forgeId=(await admin.query('SELECT id FROM entities WHERE entity_type_id=$1',[FORGE_TYPE_ID])).rows[0].id;for(const [code,value]of [['apprentice',-1n],['tap-level',4n],['fraction-millionths',1000000n]])await assert.rejects(atomic(admin,()=>new EntityStore(admin).set(forgeId,code,{type:'integer',value})),e=>e.code==='23514');await assert.rejects(atomic(admin,async()=>{const store=new EntityStore(admin),id=await store.create('workshop');await store.set(id,'owner',{type:'reference',value:accountId});}),e=>e.code==='23505');});
+ await t.test('workshop read uses a consistent read-only snapshot without a receipt query or account write lock',async()=>{
+  const before=await repo.getProfile(accountId);sqlCalls.length=0;const view=await service.getWorkshop(accountId);
+  assert.equal(view.lastSettlement,undefined);assert.equal(view.productions[0].owned,1);
+  assert.ok(sqlCalls.some(sql=>sql.includes('REPEATABLE READ, READ ONLY')));
+  assert.ok(!sqlCalls.some(sql=>/profile_operations|profile_runs|pg_advisory_xact_lock/.test(sql)));
+  assert.deepEqual(await repo.getProfile(accountId),before);
+ });
+ await t.test('cold and warm settlements load only the required immutable revision, without rebuilding retired history',async()=>{
+  const reader=new PgRepository(pool),readService=new ProfileService(reader,()=>now);
+  now=Math.max(now,Date.now())+1000;let command=await operation('forge_settle');sqlCalls.length=0;
+  await readService.perform(accountId,command);
+  const compiledReads=()=>sqlCalls.filter(sql=>sql.includes("WHERE v.entity_id=$1 AND p.code='schema-version'")).length;
+  assert.equal(compiledReads(),2,'cold history revision + fresh active balance only');
+  now+=1000;command=await operation('forge_settle');sqlCalls.length=0;
+  const result=await readService.perform(accountId,command);assert.equal(result.workshop.lastSettlement.goldMilli,'100');
+  assert.equal(compiledReads(),1,'warm history reuses immutable compiled config');
+  await reader.transaction(accountId,tx=>{tx.forgeHistory.at(-1).config.productions.apprentice.rateGoldMilliPerSecond='0';});
+  now+=1000;assert.equal((await readService.perform(accountId,await operation('forge_settle'))).workshop.lastSettlement.goldMilli,'100','caller mutations do not poison cached history');
+ });
  });

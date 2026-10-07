@@ -5,7 +5,7 @@ import type {Profile,OperationResult,ConsumableId,ItemDefinitionId,Slot,Componen
 import {createEmptyProfile,validateProfile} from './equipment.js';
 import {readBalance,readForgeHistory,accountIsBalanceAdmin,publishBalance} from '../balance/store.js';
 import {DEFAULT_BALANCE_VALUES,INITIAL_BALANCE_REVISION,balanceDocument,pinnedBalance,LEGACY_BALANCE,BalanceError,type BalanceDocument,type PinnedBalance,type BalanceValue} from '../balance/model.js';
-import {validateForgeState,type ForgeState,type ForgeBalanceHistoryEntry} from '../forge/economy.js';
+import {validateForgeState,type ForgeState,type ForgeConfig,type ForgeBalanceHistoryEntry} from '../forge/economy.js';
 import {validateProvisionAccount,PASSWORD_HASH_PATTERN,type ProvisionAccount} from './auth.js';
 
 export interface Account {id:string;login:string;passwordHash:string}
@@ -16,6 +16,7 @@ export interface TransactionContext {profile:Profile;run:StoredRun|null;operatio
 export interface Repository {
  transaction<T>(accountId:string,fn:(tx:TransactionContext)=>Promise<T>|T,operationId?:string):Promise<T>;
  getProfile(accountId:string):Promise<Profile>;
+ getWorkshopState(accountId:string):Promise<{forge:ForgeState;balance:PinnedBalance}>;
  getRun(accountId:string):Promise<StoredRun|null>;
  getOperation(accountId:string,operationId:string):Promise<StoredOperation|null>;
  findAccount(login:string):Promise<Account|null>;
@@ -50,6 +51,7 @@ const expectedEconomyParameters=[...['code','label','version'].map(code=>['compo
 
 export class PgRepository implements Repository {
  private readonly pool:Pool;private readonly ownsPool:boolean;
+ private readonly forgeBalanceCache=new Map<string,ForgeConfig>();
  constructor(connection:string|PoolConfig|Pool){this.ownsPool=!(connection instanceof Pool);this.pool=connection instanceof Pool?connection:new Pool(typeof connection==='string'?{connectionString:connection,connectionTimeoutMillis:10_000}:connection);}
  private async client<T>(fn:(c:PoolClient)=>Promise<T>):Promise<T>{
   let c:PoolClient;try{c=await this.pool.connect();}catch{throw new StorageError();}
@@ -112,7 +114,8 @@ export class PgRepository implements Repository {
  async transaction<T>(accountId:string,fn:(tx:TransactionContext)=>Promise<T>|T,operationId?:string):Promise<T>{return this.atom(async c=>{
   await c.query("SELECT set_config('foxy.balance_writer','runner-balance.1',true),set_config('foxy.forge_writer','runner-forge.1',true)");await this.locks(c,accountId);const profile=await this.loadProfile(c,accountId),run=await this.loadRun(c,accountId);
   const operations=new Map<string,StoredOperation>((await c.query(`SELECT operation_id,request_hash,result FROM profile_operations WHERE account_id=$1${operationId?' AND operation_id=$2':''}`,operationId?[accountId,operationId]:[accountId])).rows.map(r=>[r.operation_id,{hash:r.request_hash,result:r.result}]));
-  const existingOps=clone(operations),ctx:TransactionContext={profile,run,operations,forge:await this.loadForge(c,accountId),forgeHistory:await readForgeHistory(c),currentBalance:pinnedBalance(await readBalance(c))};const before=JSON.stringify(profile),beforeRun=JSON.stringify(run),beforeForge=JSON.stringify(ctx.forge);
+  const forge=await this.loadForge(c,accountId);
+  const existingOps=clone(operations),ctx:TransactionContext={profile,run,operations,forge,forgeHistory:await readForgeHistory(c,forge.settledAtMs,this.forgeBalanceCache),currentBalance:pinnedBalance(await readBalance(c))};const before=JSON.stringify(profile),beforeRun=JSON.stringify(run),beforeForge=JSON.stringify(ctx.forge);
   const result=await fn(ctx);if(ctx.profile.accountId!==accountId)throw new StorageError();
   if(JSON.stringify(ctx.profile)!==before)await this.saveProfile(c,ctx.profile);
   if(JSON.stringify(ctx.forge)!==beforeForge)await this.saveForge(c,accountId,ctx.forge);
@@ -121,6 +124,10 @@ export class PgRepository implements Repository {
   if([...existingOps.keys()].some(id=>!ctx.operations.has(id)))throw new StorageError();return clone(result);
  });}
  async getProfile(accountId:string):Promise<Profile>{return this.atom(async c=>{await c.query('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ');return this.loadProfile(c,accountId);});}
+ async getWorkshopState(accountId:string):Promise<{forge:ForgeState;balance:PinnedBalance}>{return this.atom(async c=>{
+  await c.query('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY');
+  return {forge:await this.loadForge(c,accountId),balance:pinnedBalance(await readBalance(c))};
+ });}
  async getRun(accountId:string):Promise<StoredRun|null>{return this.client(c=>this.loadRun(c,accountId));}
  async getOperation(accountId:string,operationId:string):Promise<StoredOperation|null>{return this.client(async c=>{const r=(await c.query('SELECT request_hash,result FROM profile_operations WHERE account_id=$1 AND operation_id=$2',[accountId,operationId])).rows[0];return r?{hash:r.request_hash,result:r.result}:null;});}
  async findAccount(login:string):Promise<Account|null>{return this.client(async c=>{
@@ -166,6 +173,7 @@ export class MemoryRepository implements Repository {
  private async lock<T>(id:string,fn:()=>Promise<T>):Promise<T>{const prior=this.queues.get(id)??Promise.resolve();let release!:()=>void;const gate=new Promise<void>(r=>{release=r;});const tail=prior.then(()=>gate);this.queues.set(id,tail);await prior;try{return await fn();}finally{release();if(this.queues.get(id)===tail)this.queues.delete(id);}}
  async transaction<T>(id:string,fn:(tx:TransactionContext)=>Promise<T>|T):Promise<T>{return this.lock(id,async()=>{const state=this.state.get(id);if(!state)throw new StorageError();const next=clone(state);next.currentBalance=pinnedBalance(this.balance);next.forgeHistory=clone(this.history);if(next.run&&!next.run.balance)next.run.balance=clone(LEGACY_BALANCE);const result=await fn(next);validateProfile(next.profile);if(next.profile.accountId!==id)throw new StorageError();this.state.set(id,next);return clone(result);});}
  async getProfile(id:string):Promise<Profile>{const s=this.state.get(id);if(!s)throw new StorageError();return clone(s.profile);}
+ async getWorkshopState(id:string):Promise<{forge:ForgeState;balance:PinnedBalance}>{const s=this.state.get(id);if(!s)throw new StorageError();return clone({forge:s.forge,balance:pinnedBalance(this.balance)});}
  async getRun(id:string):Promise<StoredRun|null>{return clone(this.state.get(id)?.run??null);}
  async getOperation(id:string,op:string):Promise<StoredOperation|null>{return clone(this.state.get(id)?.operations.get(op)??null);}
  async findAccount(login:string):Promise<Account|null>{return clone([...this.accounts.values()].find(a=>a.login===login)??null);}
