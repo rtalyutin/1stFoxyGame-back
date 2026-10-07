@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "check": "tsc --noEmit",
-    "test": "node --import tsx --test tests/core.test.ts tests/snapshot-v1.test.ts tests/data.test.ts tests/auth.test.ts tests/security-db.test.ts tests/security-http.test.ts tests/security-role.test.ts tests/security-publisher.test.ts tests/release.test.ts",
+    "test": "node --import tsx --test tests/core.test.ts tests/r2-core.test.ts tests/snapshot-v1.test.ts tests/data.test.ts tests/r2-data.test.ts tests/auth.test.ts tests/security-db.test.ts tests/security-http.test.ts tests/security-role.test.ts tests/security-publisher.test.ts tests/release.test.ts",
     "test:api-update": "node --import tsx --test tests/api-update.test.ts",
     "start": "node --import tsx server/index.ts",
     "migrate": "node --import tsx server/migrate.ts"

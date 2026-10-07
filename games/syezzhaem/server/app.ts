@@ -46,7 +46,7 @@ export async function createApp(options: AppOptions) {
       const supplied=request.headers['x-syezzhaem-operator-token'];
       return typeof supplied==='string'&&Buffer.byteLength(supplied)===Buffer.byteLength(options.drainToken!)&&timingSafeEqual(Buffer.from(supplied),Buffer.from(options.drainToken!));
     };
-    const status=()=>({draining,in_flight:inFlight.size,api_build_id:options.apiBuildId??'r1-api-001'});
+    const status=()=>({draining,in_flight:inFlight.size,api_build_id:options.apiBuildId??'r2-api-001'});
     app.get('/internal/syezzhaem/drain-status',async(request,reply)=> checkOperator(request)?status():reply.code(404).send({code:'NOT_FOUND'}));
     app.post('/internal/syezzhaem/drain',async(request,reply)=> {if(!checkOperator(request))return reply.code(404).send({code:'NOT_FOUND'});draining=true;return status();});
   }
@@ -65,11 +65,11 @@ export async function createApp(options: AppOptions) {
     return reply.send(response.body?await response.text():null);
   } });
   app.get('/api/syezzhaem/v1/version',async()=> ({
-    api_build_id:options.apiBuildId ?? 'r1-api-001', process_id:process.pid, api_version:'v1', snapshot_schema_versions:[1],
-    supported_content_versions:['r1-map-1','r1-map-2'], supported_rules_versions:['r1-rules-1','r1-rules-2'], active:await registry.active(),
+    api_build_id:options.apiBuildId ?? 'r2-api-001', process_id:process.pid, api_version:'v1', snapshot_schema_versions:[1],
+    supported_content_versions:['r1-map-1','r1-map-2','r2-map-1'], supported_rules_versions:['r1-rules-1','r1-rules-2','r2-rules-1'], active:await registry.active(),
   }));
   const readiness = async (_request:unknown,reply:{code:(status:number)=>{send:(value:unknown)=>unknown}}) => {
-    try { await registry.verify(); await options.auth.check(); await store.check(); return {ok:true,api_build_id:options.apiBuildId??'r1-api-001',checks:{auth:true,db:true,releases:true}}; }
+    try { await registry.verify(); await options.auth.check(); await store.check(); return {ok:true,api_build_id:options.apiBuildId??'r2-api-001',checks:{auth:true,db:true,releases:true}}; }
     catch { return reply.code(503).send({ok:false,code:'NOT_READY'}); }
   };
   app.get('/api/syezzhaem/v1/ready',readiness);

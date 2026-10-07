@@ -1,0 +1,11 @@
+✔ R2 additive metadata seed preserves populated R1/intro runs and all immutable values (1357.813106ms)
+✔ R2 typed EAV roundtrip preserves carried actor, flight, burn, stone HP and fuse; retry one revision (479.790016ms)
+✔ R2 EAV recovery restores material definitions, actor references, timers and legacy saves together (1052.575441ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3425.908796
