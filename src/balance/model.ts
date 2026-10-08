@@ -3,6 +3,7 @@ import { DEFAULT_CONFIG, DEFAULT_SHOP_ZONE, type SimulationConfig, type ShopZone
 import { RunSimulation, type SimulationRuntimeBalance } from '../combat/simulation.js';
 import { EQUIPMENT_CATALOG, BASE_MODIFIERS, validateCatalog as validateEquipmentCatalog, parseGoldMilli } from '../profile/equipment.js';
 import type { EquipmentCatalog, EquipmentModifiers } from '../profile/contracts.js';
+import { DEFAULT_FORGE_CONFIG, validateForgeConfig, type ForgeConfig } from '../forge/economy.js';
 import { REWARD_CATALOG, validateRewardCatalog, type RewardCatalog } from '../game/rewards.js';
 
 export const BALANCE_SCHEMA = 'runner-balance.1' as const;
@@ -12,7 +13,7 @@ export const BALANCE_POINTER_TYPE_ID = 'ca5b0000-0000-5000-a000-000000000003';
 export const BALANCE_POINTER_ID = 'ca5b0000-0000-5000-a000-000000000004';
 export type BalanceValue = number | boolean | string;
 export interface BalanceParameter { key: string; label: string; group: string; unit: string; type: 'number'|'integer'|'boolean'|'goldMilli'; min?: number; max?: number; step?: number; }
-export interface CompiledBalance { config: SimulationConfig; shopZone: ShopZoneConfig; equipment: EquipmentCatalog; rewards: RewardCatalog; baseModifiers: EquipmentModifiers; runtime?: SimulationRuntimeBalance; }
+export interface CompiledBalance { config: SimulationConfig; shopZone: ShopZoneConfig; equipment: EquipmentCatalog; rewards: RewardCatalog; baseModifiers: EquipmentModifiers; runtime?: SimulationRuntimeBalance; forge?: ForgeConfig & {clockEveryKills:number;clockSeconds:number}; }
 export interface PinnedBalance { schemaVersion: typeof BALANCE_SCHEMA; revision: string; compiled: CompiledBalance; }
 export interface BalanceDocument extends PinnedBalance { values: Record<string,BalanceValue>; parameters: readonly BalanceParameter[]; }
 export class BalanceError extends Error { constructor(readonly code: string, readonly statusCode: number, message='Balance could not be processed.') { super(message); } }
@@ -46,7 +47,7 @@ for(const [key,value] of Object.entries(BASE_MODIFIERS)) {
  add(`baseModifiers.${key}`,value,'Базовые модификаторы','',key==='returnHitTargets'?0:key==='goldMultiplierMilli'?1000:key==='pierceTargets'?1:0.01,key==='pierceTargets'?2:key==='returnHitTargets'?1:key==='goldMultiplierMilli'?2000:2);
 }
 function recipe(prefix:string,entry:{goldMilli:string;components:Record<string,number>},group:string):void {add(`${prefix}.goldMilli`,entry.goldMilli,group,'тысячные золота');for(const [key,value] of Object.entries(entry.components))add(`${prefix}.components.${key}`,value,group,'шт.',0,2147483647);}
-for(const item of EQUIPMENT_CATALOG.items)for(const level of item.levels) {
+for(const item of EQUIPMENT_CATALOG.items.filter(i=>i.id!=='debt_clock'))for(const level of item.levels) {
  const prefix=`items.${item.id}.levels.${level.level}`,group=`Предметы · ${item.name} · уровень ${level.level}`;
  recipe(`${prefix}.recipe`,level.recipe,group);
  for(const [key,value] of Object.entries(level.modifiers))add(`${prefix}.modifiers.${key}`,value,group,'',key==='returnHitTargets'?0:key==='goldMultiplierMilli'?1000:key==='cooldown'?0.1:1,key==='pierceTargets'?2:key==='returnHitTargets'?1:key==='goldMultiplierMilli'?2000:2);
@@ -56,14 +57,34 @@ for(const item of EQUIPMENT_CATALOG.consumables) {
  for(const [key,value] of Object.entries(item.effect))if(key!=='type')add(`${prefix}.effect.${key}`,value as number,group,key==='durationSeconds'?'с':key==='kills'?'убийства':'',key==='durationSeconds'||key==='speedMultiplier'?0.1:key==='goldMultiplierMilli'?1000:1,key==='durationSeconds'?30:key==='speedMultiplier'?1:key==='goldMultiplierMilli'?2000:100);
 }
 for(const reward of REWARD_CATALOG.rewards)for(const [key,value] of Object.entries(reward))if(key!=='kind')add(`rewards.${reward.kind}.${key}`,value,'Награды · '+reward.kind,key==='baseGoldMilli'?'тысячные золота':key==='steelProbability'?'вероятность':'шт.',0,key==='commonDrops'?2:key==='coreDrops'||key==='steelProbability'?1:10000);
+export const LEGACY_BALANCE_PARAMETERS: readonly BalanceParameter[] = Object.freeze(parameters.map(p=>Object.freeze({...p})));
+export const LEGACY_DEFAULT_BALANCE_VALUES = Object.freeze({...defaults});
+for(const item of EQUIPMENT_CATALOG.items.filter(i=>i.id==='debt_clock'))for(const level of item.levels)recipe(`items.${item.id}.levels.${level.level}.recipe`,level.recipe,`Предметы · ${item.name} · уровень ${level.level}`);
+function forgeParameter(key:string,value:string|number,label:string,unit:string,min=0,max=1000000000):void{
+ const type=typeof value==='string'?'goldMilli':'integer';parameters.push({key:'forge.'+key,label,group:'Мастерская',unit,type,...(type==='integer'?{min,max,step:1}:{})});defaults['forge.'+key]=value;
+}
+const productionNames:Record<string,string>={apprentice:'Подмастерье',smelter:'Плавильня',press:'Золотой пресс',alchemy:'Алхимическая линия'};
+for(const [id,p] of Object.entries(DEFAULT_FORGE_CONFIG.productions)){
+ forgeParameter(`productions.${id}.baseCostGoldMilli`,p.baseCostGoldMilli,'Базовая цена · '+productionNames[id],'тысячные золота');
+ forgeParameter(`productions.${id}.rateGoldMilliPerSecond`,p.rateGoldMilliPerSecond,'Доход в секунду · '+productionNames[id],'тысячные золота/с');
+}
+forgeParameter('priceGrowthPermille',DEFAULT_FORGE_CONFIG.priceGrowthPermille,'Рост цены','×1000',1000,10000);
+forgeParameter('offlineCapSeconds',DEFAULT_FORGE_CONFIG.offlineCapSeconds,'Лимит офлайн дохода','с',1,604800);
+for(const [field,array] of Object.entries({tapGoldMilli:DEFAULT_FORGE_CONFIG.tapGoldMilli,tapUpgradeCostGoldMilli:DEFAULT_FORGE_CONFIG.tapUpgradeCostGoldMilli,organizationPermille:DEFAULT_FORGE_CONFIG.organizationPermille,organizationUpgradeCostGoldMilli:DEFAULT_FORGE_CONFIG.organizationUpgradeCostGoldMilli}))for(const [i,v] of array.entries()){
+ const titles:Record<string,string>={tapGoldMilli:'Золото за удар',tapUpgradeCostGoldMilli:'Цена усиления удара',organizationPermille:'Множитель производства',organizationUpgradeCostGoldMilli:'Цена организации'};
+ const level=field==='tapUpgradeCostGoldMilli'||field==='organizationUpgradeCostGoldMilli'?`уровень ${i+1}`:i===0?'базовый':`уровень ${i}`;
+ forgeParameter(`${field}.${i}`,v,titles[field]+' · '+level,field==='organizationPermille'?'×1000':'тысячные золота',field==='organizationPermille'?1000:0,100000);
+}
+forgeParameter('clockEveryKills',10,'Убийств между бонусами Часов','убийства',1,1000);
+forgeParameter('clockSeconds',30,'Доход за бонус Часов','с',1,3600);
 export const BALANCE_PARAMETERS: readonly BalanceParameter[] = Object.freeze(parameters.map(p=>Object.freeze(p)));
 export const DEFAULT_BALANCE_VALUES = Object.freeze(defaults);
 export function parameterCode(key:string):string {return 'b-'+createHash('md5').update(key).digest('hex');}
-export function validateBalanceValues(input:unknown):Record<string,BalanceValue> {
+export function validateBalanceValues(input:unknown,legacy=false):Record<string,BalanceValue> {
  if(!input||typeof input!=='object'||Array.isArray(input))throw new BalanceError('INVALID_BALANCE',422);
  const raw=input as Record<string,unknown>,keys=Object.keys(raw);
- if(keys.length!==parameters.length||keys.some(key=>!(key in defaults)))throw new BalanceError('INVALID_BALANCE',422,'Missing or unknown balance parameter.');
- for(const p of parameters) {
+ if(keys.length!==(legacy?LEGACY_BALANCE_PARAMETERS:parameters).length||keys.some(key=>!(key in (legacy?LEGACY_DEFAULT_BALANCE_VALUES:defaults))))throw new BalanceError('INVALID_BALANCE',422,'Missing or unknown balance parameter.');
+ for(const p of legacy?LEGACY_BALANCE_PARAMETERS:parameters) {
   const value=raw[p.key];
   if(p.type==='boolean'){if(typeof value!=='boolean')throw new BalanceError('INVALID_BALANCE',422,p.key);}
   else if(p.type==='goldMilli'){try{parseGoldMilli(value);}catch{throw new BalanceError('INVALID_BALANCE',422,p.key);}}
@@ -71,8 +92,8 @@ export function validateBalanceValues(input:unknown):Record<string,BalanceValue>
  }
  return structuredClone(raw) as Record<string,BalanceValue>;
 }
-export function compileBalance(input:unknown):CompiledBalance {
- const values=validateBalanceValues(input),config={...DEFAULT_CONFIG},shopZone={...DEFAULT_SHOP_ZONE},equipment=structuredClone(EQUIPMENT_CATALOG),rewards=structuredClone(REWARD_CATALOG),baseModifiers={...BASE_MODIFIERS};
+export function compileBalance(input:unknown,legacy=false):CompiledBalance {
+ const values=validateBalanceValues(input,legacy),config={...DEFAULT_CONFIG},shopZone={...DEFAULT_SHOP_ZONE},equipment=structuredClone({...EQUIPMENT_CATALOG,items:EQUIPMENT_CATALOG.items.filter(i=>!legacy||i.id!=='debt_clock')}),rewards=structuredClone(REWARD_CATALOG),baseModifiers={...BASE_MODIFIERS};
  for(const [key,value] of Object.entries(values)) {
   const parts=key.split('.');
   if(parts[0]==='config')(config as unknown as Record<string,unknown>)[parts[1]!]=value;
@@ -108,8 +129,17 @@ export function compileBalance(input:unknown):CompiledBalance {
    validationSimulation.setEquipment(mods);
   }
  }catch(error){throw new BalanceError('INVALID_BALANCE',422,error instanceof Error?error.message:'Invalid cross-field values');}
- return {config,shopZone,equipment,rewards,baseModifiers,runtime};
+ return {config,shopZone,equipment,rewards,baseModifiers,runtime,...(legacy?{}:{forge:compileForge(values)})};
 }
-export function balanceDocument(revision:string,values:Record<string,BalanceValue>):BalanceDocument {return{schemaVersion:BALANCE_SCHEMA,revision,values:validateBalanceValues(values),parameters:BALANCE_PARAMETERS,compiled:compileBalance(values)};}
+export function balanceDocument(revision:string,values:Record<string,BalanceValue>,legacy=false):BalanceDocument {return{schemaVersion:BALANCE_SCHEMA,revision,values:validateBalanceValues(values,legacy),parameters:legacy?LEGACY_BALANCE_PARAMETERS:BALANCE_PARAMETERS,compiled:compileBalance(values,legacy)};}
 export function pinnedBalance(document:BalanceDocument):PinnedBalance {return structuredClone({schemaVersion:document.schemaVersion,revision:document.revision,compiled:document.compiled});}
-export const LEGACY_BALANCE:PinnedBalance={schemaVersion:BALANCE_SCHEMA,revision:'legacy-r34.1',compiled:{config:structuredClone(DEFAULT_CONFIG),shopZone:structuredClone(DEFAULT_SHOP_ZONE),equipment:structuredClone(EQUIPMENT_CATALOG),rewards:structuredClone(REWARD_CATALOG),baseModifiers:structuredClone(BASE_MODIFIERS)}};
+export const LEGACY_BALANCE:PinnedBalance={schemaVersion:BALANCE_SCHEMA,revision:'legacy-r34.1',compiled:{config:structuredClone(DEFAULT_CONFIG),shopZone:structuredClone(DEFAULT_SHOP_ZONE),equipment:structuredClone({...EQUIPMENT_CATALOG,items:EQUIPMENT_CATALOG.items.filter(i=>i.id!=='debt_clock')}),rewards:structuredClone(REWARD_CATALOG),baseModifiers:structuredClone(BASE_MODIFIERS)}};
+
+function compileForge(values:Record<string,BalanceValue>):ForgeConfig&{clockEveryKills:number;clockSeconds:number}{
+ const config=structuredClone(DEFAULT_FORGE_CONFIG) as ForgeConfig&{clockEveryKills:number;clockSeconds:number};
+ for(const [key,value] of Object.entries(values))if(key.startsWith('forge.')){
+  const parts=key.slice(6).split('.');let obj=config as unknown as Record<string,unknown>;
+  for(const part of parts.slice(0,-1))obj=obj[part] as Record<string,unknown>;obj[parts.at(-1)!]=value;
+ }
+ try{const checked=validateForgeConfig(config);return {...checked,clockEveryKills:Number(values['forge.clockEveryKills']),clockSeconds:Number(values['forge.clockSeconds'])};}catch(error){throw new BalanceError('INVALID_BALANCE',422,error instanceof Error?error.message:'Invalid workshop balance');}
+}

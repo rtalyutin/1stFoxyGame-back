@@ -270,6 +270,26 @@
           }
         }
       ]
+    },
+    {
+      "id": "debt_clock",
+      "name": "Часы должника",
+      "slot": "talisman",
+      "hero": "all",
+      "levels": [
+        {
+          "level": 1,
+          "recipe": {
+            "goldMilli": "450000",
+            "components": {
+              "steel": 0,
+              "ember": 3,
+              "core": 1
+            }
+          },
+          "modifiers": {}
+        }
+      ]
     }
   ],
   "consumables": [

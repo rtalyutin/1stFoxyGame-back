@@ -19,6 +19,7 @@ const ITEM_RULES = {
   return_sickle: { slot: 'weapon', hero: 'pudge', levels: 1, keys: ['returnHitTargets'] },
   conductor_cuffs: { slot: 'body', hero: 'all', levels: 3, keys: ['outboundSpeedMultiplier'] },
   side_step_boots: { slot: 'legs', hero: 'all', levels: 3, keys: ['lateralSpeedMultiplier'] },
+  debt_clock: { slot: 'talisman', hero: 'all', levels: 1, keys: [] },
   trophy_counter: { slot: 'talisman', hero: 'all', levels: 3, keys: ['goldMultiplierMilli'] },
 } as const;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -64,7 +65,7 @@ export function validateRecipe(input: unknown): Recipe {
 export function validateCatalog(input: unknown): EquipmentCatalog {
   object(input, ['version', 'items', 'consumables']);
   if (input.version !== 'r34.1') throw new Error('Unsupported equipment version');
-  if (!Array.isArray(input.items) || input.items.length !== 7) throw new Error('R34 requires seven active items');
+  if (!Array.isArray(input.items) || ![7,8].includes(input.items.length)) throw new Error('Unsupported item catalog');
   const seen = new Set<string>();
   for (const item of input.items) {
     object(item, ['id', 'name', 'slot', 'hero', 'levels']);
@@ -88,6 +89,7 @@ export function validateCatalog(input: unknown): EquipmentCatalog {
       }
     }
   }
+  if ([...Object.keys(ITEM_RULES)].filter(k=>k!=='debt_clock').some(k=>!seen.has(k)) || input.items.length===8&&!seen.has('debt_clock')) throw new Error('Missing item');
   if (!Array.isArray(input.consumables) || input.consumables.length !== 2) throw new Error('R34 requires two consumables');
   const consumables = new Set<string>();
   for (const consumable of input.consumables) {
@@ -159,7 +161,7 @@ export function validateProfile(input: unknown, catalog: EquipmentCatalog = EQUI
   for (const item of input.items) {
     object(item, ['id', 'definitionId', 'level']); id(item.id);
     if (instances.has(item.id)) throw new Error('Duplicate item instance');
-    const definition = getItemDefinition(item.definitionId as string, catalog);
+    const definition = getItemDefinition(item.definitionId as string, item.definitionId==='debt_clock'&&!catalog.items.some(i=>i.id==='debt_clock')?EQUIPMENT_CATALOG:catalog);
     if (!definition.levels.some((level) => level.level === item.level)) throw new Error('Invalid owned item level');
     instances.set(item.id, item as unknown as ItemInstance);
   }
@@ -169,7 +171,7 @@ export function validateProfile(input: unknown, catalog: EquipmentCatalog = EQUI
     if (instanceId === null) continue;
     id(instanceId);
     const instance = instances.get(instanceId);
-    if (!instance || getItemDefinition(instance.definitionId, catalog).slot !== slot) throw new Error('Unowned/incompatible equipped item');
+    if (!instance || getItemDefinition(instance.definitionId, instance.definitionId==='debt_clock'&&!catalog.items.some(i=>i.id==='debt_clock')?EQUIPMENT_CATALOG:catalog).slot !== slot) throw new Error('Unowned/incompatible equipped item');
   }
   const quick = input.loadouts.pudge.quick;
   if (!Array.isArray(quick) || quick.length !== 2 || quick.some((entry) => entry !== null && !CONSUMABLE_IDS.includes(entry as ConsumableId))) throw new Error('Invalid quick slots');
@@ -187,6 +189,7 @@ export function computeModifiers(profile: Profile, catalog: EquipmentCatalog = E
     const instanceId = profile.loadouts.pudge[slot];
     if (instanceId === null) continue;
     const instance = profile.items.find((candidate) => candidate.id === instanceId)!;
+    if(instance.definitionId==='debt_clock'&&!catalog.items.some(i=>i.id==='debt_clock'))continue;
     const level = getItemDefinition(instance.definitionId, catalog).levels.find((candidate) => candidate.level === instance.level)!;
     const effect = level.modifiers;
     rangeMultiplier *= effect.rangeMultiplier ?? 1;

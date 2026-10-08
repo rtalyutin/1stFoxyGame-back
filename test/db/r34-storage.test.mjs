@@ -10,7 +10,7 @@ import {hashPassword,verifyPassword,hashToken,newSessionToken,newCsrfToken} from
 
 const url=process.env.DATABASE_URL;if(!url)throw new Error('DATABASE_URL is required; real PostgreSQL storage tests are never skipped.');
 const ident=s=>`"${s.replaceAll('"','""')}"`;
-async function atomic(c,fn){await c.query('BEGIN');await c.query("SELECT set_config('foxy.balance_writer','runner-balance.1',true)");try{await fn();await c.query('COMMIT');}catch(e){await c.query('ROLLBACK');throw e;}}
+async function atomic(c,fn){await c.query('BEGIN');await c.query("SELECT set_config('foxy.balance_writer','runner-balance.1',true),set_config('foxy.forge_writer','runner-forge.1',true)");try{await fn();await c.query('COMMIT');}catch(e){await c.query('ROLLBACK');throw e;}}
 const hash='a'.repeat(64);
 
 test('R3/R4 typed profile, idempotent provisioning, transactional journals and runtime grants',async t=>{
